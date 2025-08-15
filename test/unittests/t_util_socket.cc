@@ -1,4 +1,3 @@
-#include <cache.h>
 #include <crypto/hash.h>
 #include <gtest/gtest.h>
 #include <unistd.h>  // fork()
@@ -12,8 +11,9 @@
 
 class T_IPC_QM : public ::testing::Test {
  protected:
-  void SetUp() override{
+  void SetUp() override {
     shash::Any hash;
+    srand(time(NULL));
     for (size_t i = 0; i < c0_hash_n; ++i) {
       hash.Randomize(i);
       c0_hashes[i] = hash;
@@ -39,6 +39,9 @@ class T_IPC_QM : public ::testing::Test {
                                       // everything in fd_refcount_mgr. Ask WHY?
   static constexpr size_t c0_hash_n = 250, c1_hash_n = magic_n;
   shash::Any c0_hashes[c0_hash_n], c1_hashes[c1_hash_n];
+
+  static constexpr size_t map_size = 256;
+  SmallHashDynamic<shash::Any, int> map_fd_;
 };
 
 TEST_F(T_IPC_QM, SingleClientExchangeSingleCommand) {
@@ -468,6 +471,7 @@ TEST_F(T_IPC_QM, CollectHashes) {
       _exit(0);
   }
   // QuotaManager code
+  qm.accept();
   qm.accept();
   // asking for hashes
   std::set<shash::Any> collected = qm.collect<shash::Any>();
