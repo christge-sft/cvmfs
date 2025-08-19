@@ -7,6 +7,7 @@
 
 #include "fd_refcount_mgr.h"  // ::hasher_any
 #include "smallhash.h"
+#include "fd_refcount_mgr.h" // ::hasher_any
 #include "util/socket.h"
 
 class T_IPC_QM : public ::testing::Test {
