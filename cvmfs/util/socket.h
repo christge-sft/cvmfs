@@ -26,7 +26,8 @@ enum class ProcessType {
 namespace util {
 enum class Command {
   SendHashes,
-  RecvHashes
+  RecvHashes,
+  CloseConnection
 };
 };  // namespace util
 

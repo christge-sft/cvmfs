@@ -22,6 +22,9 @@ static inline uint32_t hasher_int(const int &key) {
   return MurmurHash2(&key, sizeof(key), 0x07387a4f);
 }
 
+class PosixCacheManager;  // Forward declaration to provide access to
+                          // lock_cache_refcount_
+
 class FdRefcountMgr {
  public:
   /**
@@ -56,6 +59,7 @@ class FdRefcountMgr {
   FdRefcountMgr *Clone();
 
  private:
+  friend class PosixCacheManager;
   /**
    * map for fd -> refcount lookups. A backreference
    * to the object id is included in FdRefcountInfo in order
@@ -72,3 +76,4 @@ class FdRefcountMgr {
 };
 
 #endif  // CVMFS_FD_REFCOUNT_MGR_H_
+

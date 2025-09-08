@@ -5,6 +5,7 @@
 #ifndef CVMFS_CACHE_POSIX_H_
 #define CVMFS_CACHE_POSIX_H_
 
+#include <pthread.h>  // pthread_t, pthread_create
 #include <stdint.h>
 #include <sys/types.h>
 
@@ -95,7 +96,26 @@ class PosixCacheManager : public CacheManager {
   virtual int AbortTxn(void *txn);
   virtual int CommitTxn(void *txn);
 
-  virtual void Spawn() { }
+  virtual void Spawn() {
+    // The cache manager thread is the one invoking the action. So nothing to be
+    // done for the main functionality
+
+    // This is a Good entry point to spawn the socket handler for the
+    // CacheManager-QuotaManager communication
+    if (not(socket_mgr_->is_spawned_)) {
+      if (pthread_create(&(socket_mgr_->thread_), NULL,
+                         SocketManager::HandleCommunication, this)
+          != 0) {
+        LogCvmfs(kLogCvmfs, kLogSyslogErr,
+                 "CacheManager - Could not start LRU socket handler thread");
+      }
+      if (pthread_setname_np(socket_mgr_->thread_, "_socket_handler_") != 0) {
+        LogCvmfs(kLogCvmfs, kLogSyslogErr,
+                 "SocketManager thread could not be renamed.");
+      }
+      socket_mgr_->is_spawned_ = true;
+    }
+  }
 
   virtual manifest::Breadcrumb LoadBreadcrumb(const std::string &fqrn);
   virtual bool StoreBreadcrumb(const manifest::Manifest &manifest);
@@ -149,7 +169,7 @@ class PosixCacheManager : public CacheManager {
       , is_tmpfs_(false)
       , do_refcount_(do_refcount)
       , fd_mgr_(new FdRefcountMgr())
-      , cm_socket_(quota_cache_communication_socket) {
+      , socket_mgr_(new SocketManager(quota_cache_communication_socket)) {
     atomic_init32(&no_inflight_txns_);
   }
 
@@ -201,7 +221,41 @@ class PosixCacheManager : public CacheManager {
    * Use this socket to communicate with the QuotaManager and propagate the open
    * files/hashes
    */
-  CacheManagerSocket cm_socket_;
+
+  struct SocketManager {
+    CacheManagerSocket cm_socket_;
+    SocketManager(const char *name) : cm_socket_(name) { }
+    static void *HandleCommunication(void *data) {
+      PosixCacheManager *cache_mgr = static_cast<PosixCacheManager *>(data);
+      auto &socket = cache_mgr->socket_mgr_->cm_socket_;
+
+      socket.connect();
+
+      auto read_command = [&socket]() {
+        auto res = socket.read<util::Command>(1);
+        if (res.size() > 0)
+          return res[0];
+        else
+          return util::Command::CloseConnection;
+      };
+
+      util::Command cmd;
+      while ((cmd = read_command()) != util::Command::CloseConnection) {
+        // Send hashes
+        if (cmd == util::Command::SendHashes) {
+          const MutexLockGuard lock_guard(
+              cache_mgr->fd_mgr_->lock_cache_refcount_);
+          socket.send_hashes(cache_mgr->fd_mgr_->map_fd_);
+        }
+      }
+      pthread_exit(nullptr);
+    }
+
+    bool is_spawned_ = false;
+    pthread_t thread_;
+  };
+
+  UniquePtr<SocketManager> socket_mgr_;
 
 };  // class PosixCacheManager
 
