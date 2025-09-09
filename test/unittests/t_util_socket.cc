@@ -52,9 +52,28 @@ TEST_F(T_IPC_QM, CheckSocketsValidity) {
   client.connect();
   server.accept();
 
-  EXPECT_TRUE(( client )?true:false);
-  EXPECT_TRUE(( server)?true:false);
+  EXPECT_TRUE((client) ? true : false);
+  EXPECT_TRUE((server) ? true : false);
+}
 
+TEST_F(T_IPC_QM, CheckDeadClientsCleanup) {
+  LocalUnixSocket<ProcessType::Server> server{socket_name};
+  LocalUnixSocket<ProcessType::Client> c0(socket_name);
+  c0.connect();
+  EXPECT_TRUE((c0) ? true : false);
+  {
+    LocalUnixSocket<ProcessType::Client> c1(socket_name);
+    c1.connect();
+    EXPECT_TRUE((c1) ? true : false);
+  }
+
+  server.accept();
+  server.accept();
+
+  EXPECT_TRUE((server) ? true : false);
+  EXPECT_EQ(server.data_v_.size(), 2);
+  server.cleanup_dead_sockets();
+  EXPECT_EQ(server.data_v_.size(), 1);
 }
 
 TEST_F(T_IPC_QM, CheckTryAccept) {
@@ -66,9 +85,8 @@ TEST_F(T_IPC_QM, CheckTryAccept) {
   client.connect();
   EXPECT_TRUE(server.try_accept());
 
-  EXPECT_TRUE(( client )?true:false);
-  EXPECT_TRUE(( server)?true:false);
-
+  EXPECT_TRUE((client) ? true : false);
+  EXPECT_TRUE((server) ? true : false);
 }
 
 TEST_F(T_IPC_QM, SingleClientExchangeSingleCommand) {
@@ -481,16 +499,16 @@ TEST_F(T_IPC_QM, MultipleClientsManualCollect) {
       c1.connect();
 
       auto cmd0 = c0.read<util::Command>(1);
-      EXPECT_EQ(cmd0.size(),1);
-      EXPECT_EQ(cmd0[0],util::Command::SendHashes);
+      EXPECT_EQ(cmd0.size(), 1);
+      EXPECT_EQ(cmd0[0], util::Command::SendHashes);
       c0.write(util::Command::RecvHashes);
       c0.write(c0_hash_n);
       for (size_t i = 0; i < c0_hash_n; ++i) {
         c0.write(c0_hashes[i]);
       }
-      auto cmd1=c1.read<util::Command>(1);
-      EXPECT_EQ(cmd1.size(),1);
-      EXPECT_EQ(cmd1[0],util::Command::SendHashes);
+      auto cmd1 = c1.read<util::Command>(1);
+      EXPECT_EQ(cmd1.size(), 1);
+      EXPECT_EQ(cmd1[0], util::Command::SendHashes);
       c1.write(util::Command::RecvHashes);
       c1.write(c1_hash_n);
       for (size_t i = 0; i < c1_hash_n; ++i) {
@@ -503,32 +521,32 @@ TEST_F(T_IPC_QM, MultipleClientsManualCollect) {
   server.accept();
   server.accept();
 
-  server.write(util::Command::SendHashes,0);
-  server.write(util::Command::SendHashes,1);
+  server.write(util::Command::SendHashes, 0);
+  server.write(util::Command::SendHashes, 1);
 
   // Server asks for hashes
-  auto cmd0 = server.read<util::Command>(1,0);
-  auto n0 = server.read<size_t>(1,0);
-  auto c0 = server.read<shash::Any>(c0_hash_n,0);
-  EXPECT_EQ(cmd0.size(),1);
-  EXPECT_EQ(cmd0[0],util::Command::RecvHashes);
-  EXPECT_EQ(n0.size(),1);
-  EXPECT_EQ(n0[0],c0_hash_n);
-  EXPECT_EQ(c0.size(),c0_hash_n);
-  for(size_t i=0; i<c0_hash_n; ++i){
-    EXPECT_EQ(c0_hashes[i],c0[i]);
+  auto cmd0 = server.read<util::Command>(1, 0);
+  auto n0 = server.read<size_t>(1, 0);
+  auto c0 = server.read<shash::Any>(c0_hash_n, 0);
+  EXPECT_EQ(cmd0.size(), 1);
+  EXPECT_EQ(cmd0[0], util::Command::RecvHashes);
+  EXPECT_EQ(n0.size(), 1);
+  EXPECT_EQ(n0[0], c0_hash_n);
+  EXPECT_EQ(c0.size(), c0_hash_n);
+  for (size_t i = 0; i < c0_hash_n; ++i) {
+    EXPECT_EQ(c0_hashes[i], c0[i]);
   }
 
-  auto cmd1 = server.read<util::Command>(1,1);
-  auto n1 = server.read<size_t>(1,1);
-  auto c1 = server.read<shash::Any>(c1_hash_n,1);
-  EXPECT_EQ(cmd1.size(),1);
-  EXPECT_EQ(cmd1[0],util::Command::RecvHashes);
-  EXPECT_EQ(n1.size(),1);
-  EXPECT_EQ(n1[0],c1_hash_n);
-  EXPECT_EQ(c1.size(),c1_hash_n);
-  for(size_t i=0; i<c1_hash_n; ++i){
-    EXPECT_EQ(c1_hashes[i],c1[i]);
+  auto cmd1 = server.read<util::Command>(1, 1);
+  auto n1 = server.read<size_t>(1, 1);
+  auto c1 = server.read<shash::Any>(c1_hash_n, 1);
+  EXPECT_EQ(cmd1.size(), 1);
+  EXPECT_EQ(cmd1[0], util::Command::RecvHashes);
+  EXPECT_EQ(n1.size(), 1);
+  EXPECT_EQ(n1[0], c1_hash_n);
+  EXPECT_EQ(c1.size(), c1_hash_n);
+  for (size_t i = 0; i < c1_hash_n; ++i) {
+    EXPECT_EQ(c1_hashes[i], c1[i]);
   }
 }
 
@@ -549,16 +567,16 @@ TEST_F(T_IPC_QM, CollectHashes) {
       cm1.connect();
 
       auto cmd0 = cm0.read<util::Command>(1);
-      EXPECT_EQ(cmd0.size(),1);
-      EXPECT_EQ(cmd0[0],util::Command::SendHashes);
+      EXPECT_EQ(cmd0.size(), 1);
+      EXPECT_EQ(cmd0[0], util::Command::SendHashes);
       cm0.write(util::Command::RecvHashes);
       cm0.write(c0_hash_n);
       for (size_t i = 0; i < c0_hash_n; ++i) {
         cm0.write(c0_hashes[i]);
       }
-      auto cmd1=cm1.read<util::Command>(1);
-      EXPECT_EQ(cmd1.size(),1);
-      EXPECT_EQ(cmd1[0],util::Command::SendHashes);
+      auto cmd1 = cm1.read<util::Command>(1);
+      EXPECT_EQ(cmd1.size(), 1);
+      EXPECT_EQ(cmd1[0], util::Command::SendHashes);
       cm1.write(util::Command::RecvHashes);
       cm1.write(c1_hash_n);
       for (size_t i = 0; i < c1_hash_n; ++i) {
@@ -572,7 +590,7 @@ TEST_F(T_IPC_QM, CollectHashes) {
   qm.accept();
   // asking for hashes
   std::set<shash::Any> collected = qm.collect<shash::Any>();
-  EXPECT_EQ(collected.size(), c0_hash_n+c1_hash_n);
+  EXPECT_EQ(collected.size(), c0_hash_n + c1_hash_n);
   for (size_t i = 0; i < c0_hash_n; ++i) {
     EXPECT_TRUE(collected.find(c0_hashes[i]) != collected.end());
   }
@@ -613,7 +631,7 @@ TEST_F(T_IPC_QM, CollectHashesCCZero) {
 }
 */
 
-TEST_F(T_IPC_QM, CollectHashesCCNonResponsiveCacheMgr){
+TEST_F(T_IPC_QM, CollectHashesCCNonResponsiveCacheMgr) {
   QuotaManagerSocket qm{socket_name};
 
   pid_t pid = fork();
@@ -629,9 +647,9 @@ TEST_F(T_IPC_QM, CollectHashesCCNonResponsiveCacheMgr){
       cm0.connect();
       cm1.connect();
 
-      auto cmd1=cm1.read<util::Command>(1);
-      EXPECT_EQ(cmd1.size(),1);
-      EXPECT_EQ(cmd1[0],util::Command::SendHashes);
+      auto cmd1 = cm1.read<util::Command>(1);
+      EXPECT_EQ(cmd1.size(), 1);
+      EXPECT_EQ(cmd1[0], util::Command::SendHashes);
       cm1.write(util::Command::RecvHashes);
       cm1.write(c1_hash_n);
       for (size_t i = 0; i < c1_hash_n; ++i) {
@@ -680,3 +698,4 @@ TEST_F(T_IPC_QM, SingleClientSendSmallHashDynamicUseAPI) {
     EXPECT_TRUE(map_fd_.Lookup(hash, &value));
   }
 }
+

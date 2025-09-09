@@ -13,10 +13,11 @@
 #include <string>
 #include <vector>
 
-#include "crypto/hash.h"   // shash::Any
-#include "smallhash.h"     // SmallHashDynamic
-#include "util/logging.h"  // LogCvmfs
-#include "util/posix.h"    // MakeSocket
+#include "crypto/hash.h"       // shash::Any
+#include "gtest/gtest_prod.h"  //  FRIEND_TEST
+#include "smallhash.h"         // SmallHashDynamic
+#include "util/logging.h"      // LogCvmfs
+#include "util/posix.h"        // MakeSocket
 
 enum class ProcessType {
   Client,
@@ -43,6 +44,8 @@ enum class Command {
  */
 template<ProcessType PT>
 class LocalUnixSocket {
+  FRIEND_TEST(T_IPC_QM, CheckDeadClientsCleanup);
+
  public:
   template<ProcessType X = PT,
            typename std::enable_if<X == ProcessType::Server, int>::type = 0>
@@ -227,6 +230,27 @@ class LocalUnixSocket {
     return data_v_.size();
   }
 
+  template<ProcessType X = PT,
+           typename std::enable_if<X == ProcessType::Server, int>::type = 0>
+  void cleanup_dead_sockets() {
+    auto is_closed = [](int socket) -> bool {
+      char buf;
+      size_t n = recv(socket, &buf, 1, MSG_PEEK | MSG_DONTWAIT);
+      if ((n == 0) or (n < 0 and errno == ECONNRESET))
+        return true;
+      else
+        return false;
+    };
+
+    for (size_t i = 0; i < data_v_.size(); ++i) {
+      int &socket = data_v_[i];
+      if (is_closed(socket)) {
+        ::close(socket);
+        data_v_.erase(data_v_.begin() + i);
+      }
+    }
+  }
+
   explicit operator bool() const { return is_valid_; }
 
  protected:
@@ -244,7 +268,6 @@ class LocalUnixSocket {
    private:
     struct sockaddr_un addr_;
   };
-
 
   template<ProcessType X = PT,
            typename std::enable_if<X == ProcessType::Server, int>::type = 0>
