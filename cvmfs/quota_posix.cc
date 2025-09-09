@@ -35,14 +35,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <map>
-#include <set> // returned from collect_hashes
+#include <set>  // returned from collect_hashes
 #include <string>
 #include <vector>
 
@@ -124,6 +123,7 @@ void PosixQuotaManager::CleanupPipes() {
  * \return True on success, false otherwise
  */
 bool PosixQuotaManager::Cleanup(const uint64_t leave_size) {
+  manage_clients();
   if (!spawned_)
     return DoCleanup(leave_size);
 
@@ -143,6 +143,17 @@ bool PosixQuotaManager::Cleanup(const uint64_t leave_size) {
   return result;
 }
 
+void PosixQuotaManager::manage_clients() {
+  // Accept pending connect() requests
+  if (qm_socket_) {
+    while (qm_socket_.try_accept()) {
+      LogCvmfs(kLogCvmfs, kLogDebug,
+               "[PosixQuotaManager] New socket connection accepted.");
+    }
+    // Remove dead sockets
+    qm_socket_.cleanup_dead_sockets();
+  }
+}
 
 void PosixQuotaManager::CloseDatabase() {
   if (stmt_list_catalogs_)

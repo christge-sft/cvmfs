@@ -383,18 +383,12 @@ class PosixQuotaManager : public QuotaManager {
    * information of which files/hashes are open
    */
   QuotaManagerSocket qm_socket_;
+  void manage_clients();
 
   /**
    * Used in the destructor to steer closing of the database and so on.
    */
   bool initialized_;
-
-  /**
-   * Used in DoCleanup to exclude currently used files from eviction
-   */
-  // TODO(christge): Remove this completely
-  std::vector<shash::Any> open_files_;
-
 };  // class PosixQuotaManager
 
 #endif  // CVMFS_QUOTA_POSIX_H_
