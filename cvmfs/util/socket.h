@@ -366,7 +366,12 @@ class QuotaManagerSocket : public LocalUnixSocket<ProcessType::Server> {
    * LocalUnixSocket<ProcessType::Server> and the override here should be a
    * specialized: collect<shash::Any>
    */
-  std::set<shash::Any> collect_hashes() { return collect<shash::Any>(); }
+  std::set<shash::Any> collect_hashes() {
+    LogCvmfs(kLogCvmfs, kLogDebug, "[QuotaManager] initiating %s", __func__);
+    auto res = collect<shash::Any>();
+    LogCvmfs(kLogCvmfs, kLogDebug, "[QuotaManager] succesfull %s", __func__);
+    return res;
+  }
 
   /*
    * collect() works on a best effort basis; QuotaManagerSocket will attempt
