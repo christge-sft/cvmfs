@@ -58,14 +58,12 @@ class LocalUnixSocket {
     if (socket_ == -1) {
       LogCvmfs(kLogCvmfs, kLogDebug, "creating socket %s failed (%d)",
                name_.c_str(), errno);
-      is_valid_ = false;
       return;
     }
 #ifndef __APPLE__
     // fchmod on a socket is not allowed under Mac OS X
     // using default 0770 here
     if (fchmod(socket_, mode) != 0) {
-      is_valid_ = false;
       return;
     }
 #endif
@@ -80,14 +78,12 @@ class LocalUnixSocket {
         if (res == -1) {
           LogCvmfs(kLogCvmfs, kLogDebug, "binding to socket %s failed (%d)",
                    name_.c_str(), errno);
-          is_valid_ = false;
           return;
         }
 
       } else {
         LogCvmfs(kLogCvmfs, kLogDebug, "binding to socket %s failed (%d)",
                  name_.c_str(), errno);
-        is_valid_ = false;
         return;
       }
     }
@@ -96,10 +92,10 @@ class LocalUnixSocket {
       if (res == -1) {
         LogCvmfs(kLogCvmfs, kLogDebug, "listening to socket %s failed (%d)",
                  name_.c_str(), errno);
-        is_valid_ = false;
         return;
       }
     }
+    is_valid_ = true;
   }
 
   template<ProcessType X = PT,
@@ -111,9 +107,9 @@ class LocalUnixSocket {
     if (socket_ == -1) {
       LogCvmfs(kLogCvmfs, kLogDebug, "creating socket %s failed (%d)",
                name_.c_str(), errno);
-      is_valid_ = false;
       return;
     }
+    is_valid_ = true;
   }
 
   // Disable any copy or moving
@@ -276,7 +272,6 @@ class LocalUnixSocket {
       LogCvmfs(kLogCvmfs, kLogDebug,
                "accepting connection with socket %s failed (%d)", name_.c_str(),
                errno);
-      is_valid_ = false;
       return (val != -1);
     }
     data_v_.emplace_back(val);
@@ -337,7 +332,7 @@ class LocalUnixSocket {
   std::vector<int> data_v_;
 
  private:
-  bool is_valid_ = true;
+  bool is_valid_ = false;
 };
 
 class CacheManagerSocket : public LocalUnixSocket<ProcessType::Client> {
