@@ -248,6 +248,7 @@ class LocalUnixSocket {
   }
 
   explicit operator bool() const { return is_valid_; }
+  const char *path() { return name_.c_str(); }
 
  protected:
   class LocalUnixSocketAddress {

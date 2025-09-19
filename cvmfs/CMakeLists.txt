@@ -149,6 +149,19 @@ if (BUILD_CVMFS)
                          pthread
   )
 
+  add_library(cvmfs_quota_posix
+                  quota_posix.cc
+                  statistics.cc
+                  monitor.cc
+  )
+  target_include_directories(cvmfs_quota_posix PRIVATE ${SQLITE3_INCLUDE_DIR})
+  target_link_libraries(cvmfs_quota_posix
+                PUBLIC
+                  ${SQLITE3_LIBRARY}
+                PRIVATE
+                  pthread
+
+  )
   #
   # /usr/bin/cvmfs_talk`
   #
@@ -529,7 +542,9 @@ if (BUILD_LIBCVMFS_CACHE)
                          cvmfs_util_debug
                          ${ZLIB_LIBRARIES}
                          pthread
+                         cvmfs_quota_posix
   )
+
 
 
   install (

@@ -21,7 +21,7 @@
 #include "fd_refcount_mgr.h"
 #include "file_chunk.h"
 #include "manifest_fetch.h"
-#include "quota_cache_mgr_socket.h"  // quota_cache_communication_socket
+#include "quota_posix.h"  // PosixQuotaManager
 #include "shortstring.h"
 #include "statistics.h"
 #include "util/atomic.h"
@@ -168,8 +168,7 @@ class PosixCacheManager : public CacheManager {
       , reports_correct_filesize_(true)
       , is_tmpfs_(false)
       , do_refcount_(do_refcount)
-      , fd_mgr_(new FdRefcountMgr())
-      , socket_mgr_(new SocketManager(quota_cache_communication_socket)) {
+      , fd_mgr_(new FdRefcountMgr()) {
     atomic_init32(&no_inflight_txns_);
   }
 
@@ -223,11 +222,26 @@ class PosixCacheManager : public CacheManager {
    */
 
   struct SocketManager {
-    CacheManagerSocket cm_socket_;
-    SocketManager(const char *name) : cm_socket_(name) { }
     static void *HandleCommunication(void *data) {
       PosixCacheManager *cache_mgr = static_cast<PosixCacheManager *>(data);
-      auto &socket = cache_mgr->socket_mgr_->cm_socket_;
+      auto &socket_uptr = cache_mgr->socket_mgr_->cm_socket_ptr_;
+
+      while (not dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_)) {
+        // spin until a PosixQuotaManager is acquired
+      }
+
+      auto *quota_mgr = dynamic_cast<PosixQuotaManager *>(
+          cache_mgr->quota_mgr_);
+
+      while (not quota_mgr->socket_path()) {
+        // spin until the socket path is available
+      }
+
+      // Ready to construct the socket. The path is now available from the quota
+      // manager
+      socket_uptr = new CacheManagerSocket{quota_mgr->socket_path()};
+      auto &socket = *socket_uptr;
+
 
       socket.connect();
 
@@ -251,6 +265,7 @@ class PosixCacheManager : public CacheManager {
       pthread_exit(nullptr);
     }
 
+    UniquePtr<CacheManagerSocket> cm_socket_ptr_;
     bool is_spawned_ = false;
     pthread_t thread_;
   };
