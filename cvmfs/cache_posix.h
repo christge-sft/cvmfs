@@ -102,18 +102,17 @@ class PosixCacheManager : public CacheManager {
 
     // This is a Good entry point to spawn the socket handler for the
     // CacheManager-QuotaManager communication
-    if (not(socket_mgr_->is_spawned_)) {
-      if (pthread_create(&(socket_mgr_->thread_), NULL,
-                         SocketManager::HandleCommunication, this)
+    if (!socket_mgr_.IsValid()) {
+      socket_mgr_ = new SocketManager();
+
+      pthread_t thread;
+
+      if (pthread_create(&thread, NULL, SocketManager::HandleCommunication,
+                         this)
           != 0) {
         LogCvmfs(kLogCvmfs, kLogSyslogErr,
                  "CacheManager - Could not start LRU socket handler thread");
       }
-      if (pthread_setname_np(socket_mgr_->thread_, "_socket_handler_") != 0) {
-        LogCvmfs(kLogCvmfs, kLogSyslogErr,
-                 "SocketManager thread could not be renamed.");
-      }
-      socket_mgr_->is_spawned_ = true;
     }
   }
 
@@ -226,6 +225,7 @@ class PosixCacheManager : public CacheManager {
       PosixCacheManager *cache_mgr = static_cast<PosixCacheManager *>(data);
       auto &socket_uptr = cache_mgr->socket_mgr_->cm_socket_ptr_;
 
+      pthread_setname_np(pthread_self(), "__socket_t__");
       while (not dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_)) {
         // spin until a PosixQuotaManager is acquired
       }
@@ -266,8 +266,6 @@ class PosixCacheManager : public CacheManager {
     }
 
     UniquePtr<CacheManagerSocket> cm_socket_ptr_;
-    bool is_spawned_ = false;
-    pthread_t thread_;
   };
 
   UniquePtr<SocketManager> socket_mgr_;
