@@ -665,20 +665,29 @@ void *PosixCacheManager::SocketThreadMainLoop(void *data) {
 
   CacheManagerSocket socket{quota_mgr->socket_path()};
 
-  auto read_command = [&socket]() {
-    auto res = socket.read<util::Command>(1);
-    if (res.size() > 0)
-      return res[0];
-    else
-      return util::Command::CloseConnection;
-  };
+  bool do_loop = true;
 
-  util::Command cmd;
-  while ((cmd = read_command()) != util::Command::CloseConnection) {
-    // Send hashes
-    if (cmd == util::Command::SendHashes) {
-      const MutexLockGuard lock_guard(cache_mgr->fd_mgr_->lock_cache_refcount_);
-      socket.send_hashes(cache_mgr->fd_mgr_->map_fd_);
+  while ((not cache_mgr->socket_thread_abort_) and do_loop) {
+    auto cmd = socket.try_read<util::Command>(1);
+
+    if (cmd.size() > 0) {
+      switch (cmd[0]) {
+        case util::Command::SendHashes:
+          {
+            const MutexLockGuard lock_guard(cache_mgr->fd_mgr_->lock_cache_refcount_);
+            socket.send_hashes(cache_mgr->fd_mgr_->map_fd_);
+          }
+          break;
+        case util::Command::CloseConnection:
+          do_loop = false;
+          break;
+        case util::Command::RecvHashes:
+        default:
+          break;
+      }
+    }
+    else{
+      sleep(0.3);
     }
   }
 

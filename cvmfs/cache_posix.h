@@ -79,8 +79,10 @@ class PosixCacheManager : public CacheManager {
       const bool do_refcount = true);
   virtual ~PosixCacheManager() {
     if (socket_thread_spawned_) {
+      socket_thread_abort_ = true;
       pthread_join(socket_thread_, NULL);
       socket_thread_spawned_ = false;
+      socket_thread_abort_ = false;
     }
   }
   virtual bool AcquireQuotaManager(QuotaManager *quota_mgr);
@@ -224,6 +226,7 @@ class PosixCacheManager : public CacheManager {
   static void *SocketThreadMainLoop(void *data);
   pthread_t socket_thread_;
   bool socket_thread_spawned_;
+  bool socket_thread_abort_;
 };  // class PosixCacheManager
 
 #endif  // CVMFS_CACHE_POSIX_H_
