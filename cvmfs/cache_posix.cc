@@ -648,3 +648,40 @@ int64_t PosixCacheManager::Write(const void *buf, uint64_t size, void *txn) {
   transaction->size += written;
   return written;
 }
+
+void *PosixCacheManager::SocketThreadMainLoop(void *data) {
+  pthread_setname_np(pthread_self(), "__socket_t__");
+
+  PosixCacheManager *cache_mgr = static_cast<PosixCacheManager *>(data);
+
+  while (not dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_)) {
+    // spin until a PosixQuotaManager is acquired
+  }
+  auto *quota_mgr = dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_);
+
+  while (not quota_mgr->socket_path()) {
+    // spin until the socket path is available
+  }
+
+  CacheManagerSocket socket{quota_mgr->socket_path()};
+
+  auto read_command = [&socket]() {
+    auto res = socket.read<util::Command>(1);
+    if (res.size() > 0)
+      return res[0];
+    else
+      return util::Command::CloseConnection;
+  };
+
+  util::Command cmd;
+  while ((cmd = read_command()) != util::Command::CloseConnection) {
+    // Send hashes
+    if (cmd == util::Command::SendHashes) {
+      const MutexLockGuard lock_guard(cache_mgr->fd_mgr_->lock_cache_refcount_);
+      socket.send_hashes(cache_mgr->fd_mgr_->map_fd_);
+    }
+  }
+
+  pthread_exit(nullptr);
+}
+

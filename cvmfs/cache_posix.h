@@ -77,7 +77,12 @@ class PosixCacheManager : public CacheManager {
       const bool alien_cache,
       const RenameWorkarounds rename_workaround = kRenameNormal,
       const bool do_refcount = true);
-  virtual ~PosixCacheManager() { }
+  virtual ~PosixCacheManager() {
+    if (socket_thread_spawned_) {
+      pthread_join(socket_thread_, NULL);
+      socket_thread_spawned_ = false;
+    }
+  }
   virtual bool AcquireQuotaManager(QuotaManager *quota_mgr);
 
   virtual int Open(const LabeledObject &object);
@@ -102,13 +107,8 @@ class PosixCacheManager : public CacheManager {
 
     // This is a Good entry point to spawn the socket handler for the
     // CacheManager-QuotaManager communication
-    if (!socket_mgr_.IsValid()) {
-      socket_mgr_ = new SocketManager();
-
-      pthread_t thread;
-
-      if (pthread_create(&thread, NULL, SocketManager::HandleCommunication,
-                         this)
+    if (!socket_thread_spawned_) {
+      if (pthread_create(&socket_thread_, NULL, SocketThreadMainLoop, this)
           != 0) {
         LogCvmfs(kLogCvmfs, kLogSyslogErr,
                  "CacheManager - Could not start LRU socket handler thread");
@@ -167,7 +167,8 @@ class PosixCacheManager : public CacheManager {
       , reports_correct_filesize_(true)
       , is_tmpfs_(false)
       , do_refcount_(do_refcount)
-      , fd_mgr_(new FdRefcountMgr()) {
+      , fd_mgr_(new FdRefcountMgr())
+      , socket_thread_spawned_(false) {
     atomic_init32(&no_inflight_txns_);
   }
 
@@ -216,60 +217,13 @@ class PosixCacheManager : public CacheManager {
   UniquePtr<FdRefcountMgr> fd_mgr_;
 
   /**
-   * Use this socket to communicate with the QuotaManager and propagate the open
-   * files/hashes
+   * SocketThreadMainLoop() is the mainloop of the thread dedicated to
+   * communicate with the PosixQuotaManager (socket_thread_) in order to
+   * exchange open file hashes. files/hashes
    */
-
-  struct SocketManager {
-    static void *HandleCommunication(void *data) {
-      PosixCacheManager *cache_mgr = static_cast<PosixCacheManager *>(data);
-      auto &socket_uptr = cache_mgr->socket_mgr_->cm_socket_ptr_;
-
-      pthread_setname_np(pthread_self(), "__socket_t__");
-      while (not dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_)) {
-        // spin until a PosixQuotaManager is acquired
-      }
-
-      auto *quota_mgr = dynamic_cast<PosixQuotaManager *>(
-          cache_mgr->quota_mgr_);
-
-      while (not quota_mgr->socket_path()) {
-        // spin until the socket path is available
-      }
-
-      // Ready to construct the socket. The path is now available from the quota
-      // manager
-      socket_uptr = new CacheManagerSocket{quota_mgr->socket_path()};
-      auto &socket = *socket_uptr;
-
-
-      socket.connect();
-
-      auto read_command = [&socket]() {
-        auto res = socket.read<util::Command>(1);
-        if (res.size() > 0)
-          return res[0];
-        else
-          return util::Command::CloseConnection;
-      };
-
-      util::Command cmd;
-      while ((cmd = read_command()) != util::Command::CloseConnection) {
-        // Send hashes
-        if (cmd == util::Command::SendHashes) {
-          const MutexLockGuard lock_guard(
-              cache_mgr->fd_mgr_->lock_cache_refcount_);
-          socket.send_hashes(cache_mgr->fd_mgr_->map_fd_);
-        }
-      }
-      pthread_exit(nullptr);
-    }
-
-    UniquePtr<CacheManagerSocket> cm_socket_ptr_;
-  };
-
-  UniquePtr<SocketManager> socket_mgr_;
-
+  static void *SocketThreadMainLoop(void *data);
+  pthread_t socket_thread_;
+  bool socket_thread_spawned_;
 };  // class PosixCacheManager
 
 #endif  // CVMFS_CACHE_POSIX_H_
