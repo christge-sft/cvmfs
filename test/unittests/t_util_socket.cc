@@ -699,3 +699,28 @@ TEST_F(T_IPC_QM, SingleClientSendSmallHashDynamicUseAPI) {
   }
 }
 
+TEST_F(T_IPC_QM, CheckCommunicationTermination) {
+  QuotaManagerSocket qm{socket_name};
+
+  pid_t pid = fork();
+  // handshake to establish communication with each CacheManager
+  switch (pid) {
+    case -1:
+      ASSERT_TRUE(false);
+      break;
+    case 0:
+      // CacheManager-s code
+      CacheManagerSocket cm0{socket_name};
+      cm0.connect();
+
+      auto cmd = cm0.read<util::Command>();
+      EXPECT_TRUE(cmd.size() > 0);
+      EXPECT_EQ(cmd[0], util::Command::CloseConnection);
+      _exit(0);
+  }
+  // QuotaManager code
+  sleep(1);
+  qm.accept();
+  qm.initiate_communication_termination();
+}
+

@@ -447,6 +447,13 @@ class QuotaManagerSocket : public LocalUnixSocket<ProcessType::Server> {
     return result;
   }
 
+  void initiate_communication_termination() {
+    size_t nclients = data_v_.size();
+    for (size_t i = 0; i < nclients; ++i) {
+      write(util::Command::CloseConnection, i);
+    }
+  }
+
  private:
   static constexpr size_t number_of_attempts = 8;
 };
