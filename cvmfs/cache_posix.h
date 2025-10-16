@@ -79,10 +79,14 @@ class PosixCacheManager : public CacheManager {
       const bool do_refcount = true);
   virtual ~PosixCacheManager() {
     if (socket_thread_spawned_) {
-      socket_thread_abort_ = true;
+      {
+        MutexLockGuard guard(&socket_thread_abort_lock_);
+        socket_thread_abort_ = true;
+      }
       pthread_join(socket_thread_, NULL);
       socket_thread_spawned_ = false;
       socket_thread_abort_ = false;
+      pthread_mutex_destroy(&socket_thread_abort_lock_);
     }
   }
   virtual bool AcquireQuotaManager(QuotaManager *quota_mgr);
@@ -172,6 +176,8 @@ class PosixCacheManager : public CacheManager {
       , fd_mgr_(new FdRefcountMgr())
       , socket_thread_spawned_(false) {
     atomic_init32(&no_inflight_txns_);
+    const int retval = pthread_mutex_init(&socket_thread_abort_lock_, NULL);
+    assert(retval == 0);
   }
 
   std::string GetPathInCache(const shash::Any &id);
@@ -227,6 +233,7 @@ class PosixCacheManager : public CacheManager {
   pthread_t socket_thread_;
   bool socket_thread_spawned_;
   bool socket_thread_abort_;
+  pthread_mutex_t socket_thread_abort_lock_;
 };  // class PosixCacheManager
 
 #endif  // CVMFS_CACHE_POSIX_H_
