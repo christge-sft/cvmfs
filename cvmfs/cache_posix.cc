@@ -650,7 +650,7 @@ int64_t PosixCacheManager::Write(const void *buf, uint64_t size, void *txn) {
 }
 
 void *PosixCacheManager::SocketThreadMainLoop(void *data) {
-  pthread_setname_np(pthread_self(), "__socket_t__");
+  pthread_setname_np(pthread_self(), "mp_qm_t");
   PosixCacheManager *cache_mgr = static_cast<PosixCacheManager *>(data);
 
   while (not dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_)) {
@@ -658,11 +658,10 @@ void *PosixCacheManager::SocketThreadMainLoop(void *data) {
   }
   auto *quota_mgr = dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_);
 
-  while (not quota_mgr->socket_path()) {
+  while (quota_mgr->GetSocketPath().size()==0) {
     // spin until the socket path is available
   }
-
-  CacheManagerSocket socket{quota_mgr->socket_path()};
+  CacheManagerSocket socket{quota_mgr->GetSocketPath().c_str()};
 
   bool do_loop = true;
 

@@ -262,7 +262,7 @@ class LocalUnixSocket {
   }
 
   explicit operator bool() const { return is_valid_; }
-  const char *path() { return name_.c_str(); }
+  const std::string &path() const { return name_; }
 
  protected:
   class LocalUnixSocketAddress {

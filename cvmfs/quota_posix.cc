@@ -144,7 +144,7 @@ bool PosixQuotaManager::Cleanup(const uint64_t leave_size) {
 
 void PosixQuotaManager::manage_clients() {
   // Accept pending connect() requests
-  if (qm_socket_!=nullptr) {
+  if (qm_socket_ != nullptr) {
     while (qm_socket_->try_accept()) {
       LogCvmfs(kLogCvmfs, kLogDebug,
                "[PosixQuotaManager] New socket connection accepted.");
@@ -788,7 +788,6 @@ pid_t PosixQuotaManager::GetPid() {
   return result;
 }
 
-
 uint32_t PosixQuotaManager::GetProtocolRevision() {
   int pipe_revision[2];
   MakeReturnPipe(pipe_revision);
@@ -802,6 +801,24 @@ uint32_t PosixQuotaManager::GetProtocolRevision() {
   ManagedReadHalfPipe(pipe_revision[0], &revision, sizeof(revision));
   CloseReturnPipe(pipe_revision);
   return revision;
+}
+
+
+std::string PosixQuotaManager::GetSocketPath() {
+  int pipe_socket_path[2];
+  MakeReturnPipe(pipe_socket_path);
+
+  LruCommand cmd;
+  cmd.command_type = kGetSocketPath;
+  cmd.return_pipe = pipe_socket_path[1];
+  WritePipe(pipe_lru_[1], &cmd, sizeof(cmd));
+
+  size_t path_size = 0;
+  ManagedReadHalfPipe(pipe_socket_path[0], &path_size, sizeof(size_t));
+  char *socket_path = (char *)malloc(path_size * sizeof(char));
+  ManagedReadHalfPipe(pipe_socket_path[0], socket_path, path_size);
+  CloseReturnPipe(pipe_socket_path);
+  return socket_path;
 }
 
 
@@ -1257,11 +1274,6 @@ int PosixQuotaManager::MainCacheManager(int argc, char **argv) {
   // Don't let Ctrl-C ungracefully kill interactive session
   signal(SIGINT, SIG_IGN);
 
-  // Construct the socket to communicate with the __socket_t__ fuse thread of
-  // every associated mountpoint
-  std::string path = get_new_path(shared_manager.workspace_dir_);
-  shared_manager.qm_socket_ = new QuotaManagerSocket(path.c_str());
-
   shared_manager.MainCommandServer(&shared_manager);
   unlink(fifo_path.c_str());
   unlink(protocol_revision_path.c_str());
@@ -1283,6 +1295,13 @@ void *PosixQuotaManager::MainCommandServer(void *data) {
 
   LogCvmfs(kLogQuota, kLogDebug, "starting quota manager");
   sqlite3_soft_heap_limit(quota_mgr->kSqliteMemPerThread);
+
+  // Construct the socket to communicate with the __socket_t__ fuse thread of
+  // every associated mountpoint
+  std::string path = get_new_path(quota_mgr->workspace_dir_);
+  quota_mgr->qm_socket_ = new QuotaManagerSocket(path.c_str());
+
+
 
   LruCommand command_buffer[kCommandBufferSize];
   char description_buffer[kCommandBufferSize * kMaxDescription];
@@ -1312,6 +1331,21 @@ void *PosixQuotaManager::MainCommandServer(void *data) {
         continue;
       WritePipe(return_pipe, &quota_mgr->kProtocolRevision,
                 sizeof(quota_mgr->kProtocolRevision));
+      quota_mgr->UnbindReturnPipe(return_pipe);
+      continue;
+    }
+
+    // The Quota Manager's socket path
+    if (command_type == kGetSocketPath) {
+      const int return_pipe = quota_mgr->BindReturnPipe(
+          command_buffer[num_commands].return_pipe);
+      if (return_pipe < 0)
+        continue;
+      const std::string& path = quota_mgr->qm_socket_->path();
+      size_t path_size = path.size()
+                         + 1;  // include the null terminator
+      WritePipe(return_pipe, &path_size, sizeof(size_t));
+      WritePipe(return_pipe, path.c_str(), path_size);
       quota_mgr->UnbindReturnPipe(return_pipe);
       continue;
     }
@@ -1769,7 +1803,7 @@ PosixQuotaManager::PosixQuotaManager(const uint64_t limit,
     , stmt_list_volatile_(NULL)
     , use_non_open_lru_cleanup_(use_of_aware_cleanup)
     , qm_socket_(nullptr)
-    , initialized_(false){
+    , initialized_(false) {
   ParseDirectories(cache_workspace, &cache_dir_, &workspace_dir_);
   pipe_lru_[0] = pipe_lru_[1] = -1;
   cleanup_recorder_.AddRecorder(1, 90);  // last 1.5 min with second resolution

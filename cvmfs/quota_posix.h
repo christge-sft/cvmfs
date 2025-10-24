@@ -92,13 +92,7 @@ class PosixQuotaManager : public QuotaManager {
 
   void ManagedReadHalfPipe(int fd, void *buf, size_t nbyte);
   void SetCacheMgrPid(pid_t pid_) { cachemgr_pid_ = pid_; };
-  const char *socket_path() {
-    if (qm_socket_ != nullptr) {
-      return qm_socket_->path();
-    } else {
-      return nullptr;
-    }
-  }
+  virtual std::string GetSocketPath();
 
  private:
   /**
@@ -135,12 +129,14 @@ class PosixQuotaManager : public QuotaManager {
     kListVolatile,
     kCleanupRate,
     kSetLimit,
+    // as of new open file aware cleanup
+    kGetSocketPath,
   };
 
   /**
-   * That could be done in more elegant way.  However, we might have a situation
-   * with old cache manager serving new clients (or vice versa) and we don't
-   * want to change the memory layout of LruCommand.
+   * That could be done in more elegant way.  However, we might have a
+   * situation with old cache manager serving new clients (or vice versa) and
+   * we don't want to change the memory layout of LruCommand.
    */
   struct LruCommand {
     CommandType command_type;

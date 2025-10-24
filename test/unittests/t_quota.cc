@@ -222,7 +222,6 @@ TEST_F(T_QuotaManager, Cleanup) {
 TEST_F(T_QuotaManager, CleanupLru) {
   unsigned N = hashes_.size();
   vector<shash::Any> shuffled_hashes = Shuffle(hashes_, &prng_);
-  quota_mgr_->qm_socket_=new QuotaManagerSocket(PosixQuotaManager::get_new_path( tmp_path_ ).c_str());
 
   for (unsigned i = 0; i < N; ++i) {
     quota_mgr_->Insert(
@@ -234,6 +233,7 @@ TEST_F(T_QuotaManager, CleanupLru) {
   }
   const size_t open_files = N / 1000;
 
+  auto socket_path=quota_mgr_->GetSocketPath();
   pid_t pid = fork();
   // Simulate the CacheManager
   switch (pid) {
@@ -242,7 +242,7 @@ TEST_F(T_QuotaManager, CleanupLru) {
       break;
     case 0:
       // CacheManager-s code
-      CacheManagerSocket cm0{quota_mgr_->socket_path()};
+      CacheManagerSocket cm0{socket_path.c_str()};
       EXPECT_TRUE(cm0);
       cm0.connect();
 
@@ -440,6 +440,7 @@ TEST_F(T_QuotaManager, InsertList) {
 
 TEST_F(T_QuotaManager, Getters) {
   EXPECT_EQ(QuotaManager::kProtocolRevision, quota_mgr_->GetProtocolRevision());
+  EXPECT_TRUE(quota_mgr_->GetSocketPath().size()>0);
   EXPECT_EQ(getpid(), quota_mgr_->GetPid());
 
   EXPECT_EQ(0U, quota_mgr_->GetSize());
