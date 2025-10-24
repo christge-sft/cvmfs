@@ -651,7 +651,6 @@ int64_t PosixCacheManager::Write(const void *buf, uint64_t size, void *txn) {
 
 void *PosixCacheManager::SocketThreadMainLoop(void *data) {
   pthread_setname_np(pthread_self(), "__socket_t__");
-
   PosixCacheManager *cache_mgr = static_cast<PosixCacheManager *>(data);
 
   while (not dynamic_cast<PosixQuotaManager *>(cache_mgr->quota_mgr_)) {
@@ -668,8 +667,7 @@ void *PosixCacheManager::SocketThreadMainLoop(void *data) {
   bool do_loop = true;
 
   while ((not cache_mgr->socket_thread_abort_) and do_loop) {
-    auto cmd = socket.try_read<util::Command>(1);
-
+    auto cmd = socket.read_with_timeout<util::Command>(1);
     if (cmd.size() > 0) {
       switch (cmd[0]) {
         case util::Command::SendHashes:
@@ -686,11 +684,7 @@ void *PosixCacheManager::SocketThreadMainLoop(void *data) {
           break;
       }
     }
-    else{
-      sleep(0.3);
-    }
   }
-
   pthread_exit(nullptr);
 }
 
