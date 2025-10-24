@@ -144,13 +144,13 @@ bool PosixQuotaManager::Cleanup(const uint64_t leave_size) {
 
 void PosixQuotaManager::manage_clients() {
   // Accept pending connect() requests
-  if (qm_socket_) {
-    while (qm_socket_.try_accept()) {
+  if (qm_socket_!=nullptr) {
+    while (qm_socket_->try_accept()) {
       LogCvmfs(kLogCvmfs, kLogDebug,
                "[PosixQuotaManager] New socket connection accepted.");
     }
     // Remove dead sockets
-    qm_socket_.cleanup_dead_sockets();
+    qm_socket_->cleanup_dead_sockets();
   }
 }
 
@@ -526,7 +526,7 @@ bool PosixQuotaManager::DoCleanup(const uint64_t leave_size) {
   std::set<shash::Any> open_files;
 
   if (use_non_open_lru_cleanup_) {
-    open_files = qm_socket_.collect_hashes();
+    open_files = qm_socket_->collect_hashes();
   }
 
   do {
@@ -1257,6 +1257,11 @@ int PosixQuotaManager::MainCacheManager(int argc, char **argv) {
   // Don't let Ctrl-C ungracefully kill interactive session
   signal(SIGINT, SIG_IGN);
 
+  // Construct the socket to communicate with the __socket_t__ fuse thread of
+  // every associated mountpoint
+  std::string path = get_new_path(shared_manager.workspace_dir_);
+  shared_manager.qm_socket_ = new QuotaManagerSocket(path.c_str());
+
   shared_manager.MainCommandServer(&shared_manager);
   unlink(fifo_path.c_str());
   unlink(protocol_revision_path.c_str());
@@ -1763,8 +1768,8 @@ PosixQuotaManager::PosixQuotaManager(const uint64_t limit,
     , stmt_list_catalogs_(NULL)
     , stmt_list_volatile_(NULL)
     , use_non_open_lru_cleanup_(use_of_aware_cleanup)
-    , qm_socket_((get_new_path(cache_workspace)).c_str())
-    , initialized_(false) {
+    , qm_socket_(nullptr)
+    , initialized_(false){
   ParseDirectories(cache_workspace, &cache_dir_, &workspace_dir_);
   pipe_lru_[0] = pipe_lru_[1] = -1;
   cleanup_recorder_.AddRecorder(1, 90);  // last 1.5 min with second resolution
@@ -1785,6 +1790,10 @@ PosixQuotaManager::~PosixQuotaManager() {
     // Most of cleanup is done elsewhen by shared cache manager
     close(pipe_lru_[1]);
     return;
+  }
+
+  if (qm_socket_ != nullptr) {
+    delete qm_socket_;
   }
 
   if (spawned_) {

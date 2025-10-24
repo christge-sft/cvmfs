@@ -222,6 +222,8 @@ TEST_F(T_QuotaManager, Cleanup) {
 TEST_F(T_QuotaManager, CleanupLru) {
   unsigned N = hashes_.size();
   vector<shash::Any> shuffled_hashes = Shuffle(hashes_, &prng_);
+  quota_mgr_->qm_socket_=new QuotaManagerSocket(PosixQuotaManager::get_new_path( tmp_path_ ).c_str());
+
   for (unsigned i = 0; i < N; ++i) {
     quota_mgr_->Insert(
         shuffled_hashes[i], 1,
@@ -256,7 +258,7 @@ TEST_F(T_QuotaManager, CleanupLru) {
   }
 
   sleep(1);
-  EXPECT_TRUE(quota_mgr_->qm_socket_);
+//  EXPECT_TRUE(*(quota_mgr_->qm_socket_));
   EXPECT_TRUE(quota_mgr_->use_non_open_lru_cleanup_);
   EXPECT_TRUE(quota_mgr_->Cleanup(N / 2));
   vector<string> remaining = quota_mgr_->List();

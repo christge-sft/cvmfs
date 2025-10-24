@@ -93,8 +93,8 @@ class PosixQuotaManager : public QuotaManager {
   void ManagedReadHalfPipe(int fd, void *buf, size_t nbyte);
   void SetCacheMgrPid(pid_t pid_) { cachemgr_pid_ = pid_; };
   const char *socket_path() {
-    if (qm_socket_) {
-      return qm_socket_.path();
+    if (qm_socket_ != nullptr) {
+      return qm_socket_->path();
     } else {
       return nullptr;
     }
@@ -389,10 +389,14 @@ class PosixQuotaManager : public QuotaManager {
    * Use this socket to communicate with the cache managers and get the
    * information of which files/hashes are open
    */
-  std::string get_new_path(const std::string &cache_workspace) {
+  static std::string get_new_path(const std::string &cache_workspace) {
+    /*
     auto workspace_dir = (SplitString(cache_workspace, ':').size() > 1)
                              ? SplitString(cache_workspace, ':')[1]
                              : SplitString(cache_workspace, ':')[0];
+                             */
+    //    std::string& workspace_dir = cache_workspace;
+    std::string workspace_dir = "/tmp";
     char buf[256];
     snprintf(buf, 256, "mktemp -p %s -u --suffix=.socket",
              workspace_dir.c_str());
@@ -415,7 +419,7 @@ class PosixQuotaManager : public QuotaManager {
     return {};
   }
 
-  QuotaManagerSocket qm_socket_;
+  QuotaManagerSocket *qm_socket_;
   void manage_clients();
 
   /**
