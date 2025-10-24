@@ -198,6 +198,20 @@ class LocalUnixSocket {
 
   template<typename ContiguousType, ProcessType X = PT,
            typename std::enable_if<X == ProcessType::Server, int>::type = 0>
+  std::vector<ContiguousType> read_with_timeout(
+      size_t elements = 1, size_t socket_number = 0) const {
+    read_from_socket_with_timeout<ContiguousType>(elements, socket_number,
+                                                  read_timeout);
+  }
+  template<typename ContiguousType, ProcessType X = PT,
+           typename std::enable_if<X == ProcessType::Client, int>::type = 0>
+  std::vector<ContiguousType> read_with_timeout(size_t elements = 1) const {
+    return read_from_socket_with_timeout<ContiguousType>(elements, socket_,
+                                                         read_timeout);
+  }
+
+  template<typename ContiguousType, ProcessType X = PT,
+           typename std::enable_if<X == ProcessType::Server, int>::type = 0>
   std::vector<ContiguousType> read(size_t elements = 1,
                                    size_t socket_number = 0) const {
     return read_from_socket<ContiguousType>(elements, data_v_[socket_number]);
@@ -298,6 +312,17 @@ class LocalUnixSocket {
   }
 
   template<typename ContiguousType>
+  std::vector<ContiguousType> read_from_socket_with_timeout(
+      size_t elements, int socket, size_t timeout) const {
+    auto result = try_read_from_socket<ContiguousType>(elements, socket);
+    if (result.size() == 0) {
+      sleep(timeout);
+      result = try_read_from_socket<ContiguousType>(elements, socket);
+    }
+    return result;
+  }
+
+  template<typename ContiguousType>
   std::vector<ContiguousType> read_from_socket(size_t elements,
                                                int socket) const {
     std::vector<ContiguousType> result;
@@ -334,6 +359,7 @@ class LocalUnixSocket {
 
  private:
   bool is_valid_ = false;
+  static constexpr size_t read_timeout = 1;
 };
 
 class CacheManagerSocket : public LocalUnixSocket<ProcessType::Client> {
