@@ -6,7 +6,6 @@
 #include <gtest/gtest.h>
 
 #include <type_traits>
-#include <vector>
 
 #include "bundle_mgr.h"
 #include "catalog_mgr_client.h"
@@ -90,7 +89,7 @@ class MockBundleFileMgr : public BundleFileMgr {
       : BundleFileMgr(trigger_file_path) { };
   virtual ~MockBundleFileMgr() = default;
   MOCK_METHOD(size_t, Size, (), (const));
-  MOCK_METHOD(UniquePtr<CacheManager::LabeledObject>, GetNext, (), (const));
+  MOCK_METHOD(UniquePtr<CacheManager::LabeledObject>, GetNext, (), (override));
   void Reset() { counter_ = 0; }
   size_t counter_ = 0;
 };
