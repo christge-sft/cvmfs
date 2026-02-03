@@ -233,6 +233,7 @@ if (BUILD_CVMFS)
   set (CVMFS_FUSE_SOURCES
        ${CVMFS_COMMON_CLIENT_SOURCES}
        auto_umount.cc
+       bundle_mgr.cc
        compat.cc
        cvmfs.cc
        fuse_evict.cc
@@ -248,7 +249,6 @@ if (BUILD_CVMFS)
        supervisor.cc
        talk.cc
        url.cc
-       bundle_mgr.cc
   )
   set (CVMFS_FUSE_CFLAGS "-DCVMFS_FUSE_MODULE -D_FILE_OFFSET_BITS=64 -fexceptions")
   if (CVMFS_ENABLE_FUSE3_CACHE_READDIR)
