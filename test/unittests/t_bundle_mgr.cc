@@ -24,7 +24,7 @@ using namespace std;  // NOLINT
 class MockCatalogManager : public catalog::ClientCatalogManager {
  public:
   MockCatalogManager(MountPoint *mountpoint)
-      : ClientCatalogManager(mountpoint) { };
+      : ClientCatalogManager(mountpoint){};
   virtual ~MockCatalogManager() = default;
   MOCK_METHOD(fuse_ino_t, MangleInode, (fuse_ino_t ino), (const));
   MOCK_METHOD(bool,
@@ -42,7 +42,7 @@ class MockFetcher : public cvmfs::Fetcher {
               BackoffThrottle *backoff_throttle,
               perf::StatisticsTemplate statistics)
       : Fetcher(cache_mgr, download_mgr, backoff_throttle, statistics)
-      , statistics_(statistics.statistics()) { };
+      , statistics_(statistics.statistics()){};
   int Fetch(const CacheManager::LabeledObject &object,
             const std::string &alt_url = "") override {
     return ++counter_;
@@ -86,10 +86,10 @@ class MockPathCache : public lru::PathCache {
 class MockBundleFileMgr : public BundleFileMgr {
  public:
   MockBundleFileMgr(const PathString &trigger_file_path)
-      : BundleFileMgr(trigger_file_path) { };
+      : BundleFileMgr(trigger_file_path){};
   virtual ~MockBundleFileMgr() = default;
   MOCK_METHOD(size_t, Size, (), (const));
-  MOCK_METHOD(UniquePtr<CacheManager::LabeledObject>, GetNext, (), (override));
+  MOCK_METHOD(PathString, GetNext, (), (override));
   void Reset() { counter_ = 0; }
   size_t counter_ = 0;
 };
@@ -155,19 +155,12 @@ class T_BundleMgr : public ::testing::Test {
     ON_CALL(*bfm_, Size).WillByDefault(testing::Return(10));
     EXPECT_EQ(bfm_->Size(), 10);
     srand(time(NULL));
-    ON_CALL(*bfm_, GetNext).WillByDefault([this]() {
+    ON_CALL(*bfm_, GetNext).WillByDefault([this]()->PathString {
       if (bfm_->counter_ < bfm_->Size()) {
         bfm_->counter_ += 1;
-        shash::Any hash;
-        CacheManager::Label label;
-        label.path = std::string{};
-        label.size = sizeof(shash::Any);
-        label.zip_algorithm = zlib::kZlibDefault;
-        return UniquePtr<CacheManager::LabeledObject>(
-            new CacheManager::LabeledObject(hash, label));
-
+        return static_cast<PathString>("path/to/file.txt");
       } else {
-        return UniquePtr<CacheManager::LabeledObject>{nullptr};
+        return PathString();
       }
     });
     if (bundle_mgr_->fetcher_ != nullptr) {
@@ -205,7 +198,7 @@ class T_BundleMgr : public ::testing::Test {
     T reply = bundle_mgr_->BlockingReceive<T>(rfd_);
     EXPECT_EQ(obj, reply);
   }
-  void test_blocking_exchange(const std::string&obj) {
+  void test_blocking_exchange(const std::string &obj) {
     bundle_mgr_->BlockingSend(wfd_, obj);
     std::string reply = bundle_mgr_->BlockingReceive(rfd_);
     EXPECT_EQ(obj, reply);
@@ -251,7 +244,7 @@ TEST_F(T_BundleMgr, ExchangeCT) {
   zlib::Algorithms algo{zlib::Algorithms::kNoCompression};
   off_t offset = 42;
   hash.Randomize(integer);
-  std::string string="Test_String";
+  std::string string = "Test_String";
 
   test_blocking_exchange(integer);
   test_blocking_exchange(hash);
@@ -261,22 +254,24 @@ TEST_F(T_BundleMgr, ExchangeCT) {
   test_blocking_exchange(string);
 }
 
-TEST_F(T_BundleMgr, ExchangeLabeledObjects) { 
+TEST_F(T_BundleMgr, ExchangeLabeledObjects) {
   shash::Any hash;
   hash.Randomize(42);
   CacheManager::Label label{};
-  UniquePtr<CacheManager::LabeledObject> object {new CacheManager::LabeledObject{hash,label}};
+  UniquePtr<CacheManager::LabeledObject> object{
+      new CacheManager::LabeledObject{hash, label}};
 
   bundle_mgr_->SendLabeledObject(wfd_, object);
-  UniquePtr<CacheManager::LabeledObject> replied_obj = bundle_mgr_->ReceiveLabeledObject(rfd_);
+  UniquePtr<CacheManager::LabeledObject>
+      replied_obj = bundle_mgr_->ReceiveLabeledObject(rfd_);
   EXPECT_TRUE(replied_obj.IsValid());
 
-  EXPECT_EQ(object->id,replied_obj->id);
-  EXPECT_EQ(object->label.flags,replied_obj->label.flags);
-  EXPECT_EQ(object->label.size,replied_obj->label.size);
-  EXPECT_EQ(object->label.zip_algorithm,replied_obj->label.zip_algorithm);
-  EXPECT_EQ(object->label.range_offset,replied_obj->label.range_offset);
-  EXPECT_EQ(object->label.path,replied_obj->label.path);
+  EXPECT_EQ(object->id, replied_obj->id);
+  EXPECT_EQ(object->label.flags, replied_obj->label.flags);
+  EXPECT_EQ(object->label.size, replied_obj->label.size);
+  EXPECT_EQ(object->label.zip_algorithm, replied_obj->label.zip_algorithm);
+  EXPECT_EQ(object->label.range_offset, replied_obj->label.range_offset);
+  EXPECT_EQ(object->label.path, replied_obj->label.path);
 }
 
 TEST_F(T_BundleMgr, Fetch) {

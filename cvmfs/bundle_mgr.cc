@@ -44,13 +44,15 @@ void BundleMgr::Fetch() {
   }
 
   while (true) {
-    UniquePtr<CacheManager::LabeledObject> obj = bfm_->GetNext();
-    if (not obj.IsValid()) {
+    auto file = bfm_->GetNext();
+    if (file.IsEmpty()) {
       break;
     }
     auto wfd = std::get<1>(*it);
     // Find the first available Fetcher to send the data
-    while (not TrySendData(wfd, obj)) {
+//  TODO(christge):implement the logic here
+//  while (not TrySendData(wfd, file)) {
+    while (false) {
       if ((++it) == fetcher_pool_.end()) {
         it = fetcher_pool_.begin();
       }
