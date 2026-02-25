@@ -6,11 +6,11 @@
 
 #include <pthread.h>
 
+#include <cassert>
 #include <vector>
 
 #include "fetch.h"
 #include "util/inode.h"
-#include "util/pointer.h"
 #include "util/posix.h"
 
 BundleMgr::BundleMgr(MountPoint *mp, fuse_ino_t ino) : mount_point_(mp) {
@@ -46,21 +46,16 @@ void BundleMgr::Fetch() {
   while (true) {
     auto file = bfm_->GetNext();
     if (file.IsEmpty()) {
+      // An empty file means no more dependencies available
       break;
     }
     auto wfd = std::get<1>(*it);
     // Find the first available Fetcher to send the data
-//  TODO(christge):implement the logic here
-//  while (not TrySendData(wfd, file)) {
-    while (false) {
-      if ((++it) == fetcher_pool_.end()) {
-        it = fetcher_pool_.begin();
-      }
+    while (not TrySendPath(wfd, file)) {
+      it = (++it == fetcher_pool_.end()) ? it : fetcher_pool_.begin();
       wfd = std::get<1>(*it);
     }
-    if ((++it) == fetcher_pool_.end()) {
-      it = fetcher_pool_.begin();
-    }
+    it = (++it == fetcher_pool_.end()) ? it : fetcher_pool_.begin();
   }
 
   JoinFetchers();
@@ -106,7 +101,8 @@ void BundleMgr::SpawnFetchers() {
   const size_t size = 1 + (bfm_->Size() / 30);  // Spawn at least one fetcher
   for (size_t i = 0; i < size; ++i) {
     pthread_t thread;
-    const int res = pthread_create(&thread, nullptr, MainBundleMgrFetcher, this);
+    const int res = pthread_create(
+        &thread, nullptr, MainBundleMgrFetcher, this);
     if (res != 0) {
       LogCvmfs(kLogBundleMgr, kLogDebug, "Thread creation failed!");
       continue;
@@ -125,26 +121,28 @@ void BundleMgr::SpawnFetchers() {
   }
 }
 
+void FetchPath(const PathString &path){
+  // TODO(christge): Implement that. Glue it with system's fetcher
+}
+
 void *BundleMgr::MainBundleMgrFetcher(void *data) {
   pthread_setname_np(pthread_self(), "bm_fetcher");
   BundleMgr *mgr = static_cast<BundleMgr *>(data);
-  const int& wfd = mgr->pipe_bm_[1];
+  const int wfd = mgr->pipe_bm_[1];
   int back_channel[2];
   MakePipe(back_channel);
 
   WritePipe(wfd, &back_channel[1], sizeof(int));
 
-  const int &rfd = back_channel[0];
+  const int rfd = back_channel[0];
 
   Command cmd;
   while (read(rfd, &cmd, sizeof(Command)) == sizeof(Command)) {
     bool terminate = false;
     switch (cmd) {
-      case Command::kFetch: {
-        auto obj = mgr->ReceiveLabeledObject(rfd);
-        assert(obj.IsValid() && "Received a null object");
-        mgr->fetcher_->Fetch(*obj);
-      } break;
+      case Command::kFetch:
+        mgr->FetchPath(mgr->ReceivePath(rfd));
+        break;
       case Command::kTerminate:
       default:
         terminate = true;
@@ -159,34 +157,13 @@ void *BundleMgr::MainBundleMgrFetcher(void *data) {
   pthread_exit(nullptr);
 }
 
-UniquePtr<CacheManager::LabeledObject> BundleMgr::ReceiveLabeledObject(
-    int fd) const {
-  const shash::Any id = BlockingReceive<shash::Any>(fd);
-  CacheManager::Label label;
-  label.flags = BlockingReceive<int>(fd);
-  label.size = BlockingReceive<uint64_t>(fd);
-  label.zip_algorithm = BlockingReceive<zlib::Algorithms>(fd);
-  label.range_offset = BlockingReceive<off_t>(fd);
-  label.path = BlockingReceive(fd);
-  CacheManager::LabeledObject *obj = new CacheManager::LabeledObject(id, label);
-  assert(obj != nullptr);
-  return UniquePtr<CacheManager::LabeledObject>(obj);
+PathString BundleMgr::ReceivePath(int fd) const {
+  std::string buffer = BlockingReceive(fd);
+  assert(buffer.size() > 0 && "A path can't be empty");
+  return PathString(buffer);
 }
 
-bool BundleMgr::SendLabeledObject(
-    int fd, const UniquePtr<CacheManager::LabeledObject> &obj) const {
-  BlockingSend(fd, obj->id);
-  BlockingSend(fd, obj->label.flags);
-  BlockingSend(fd, obj->label.size);
-  BlockingSend(fd, obj->label.zip_algorithm);
-  BlockingSend(fd, obj->label.range_offset);
-  const std::string &path = obj->label.path;
-  BlockingSend(fd, path);
-  return true;
-}
-
-bool BundleMgr::TrySendData(int fd,
-                            UniquePtr<CacheManager::LabeledObject> &obj) const {
+bool BundleMgr::TrySendPath(int fd, const PathString &path) const {
   Command cmd = Command::kFetch;
   if ((write(fd, &cmd, sizeof(Command))) != sizeof(Command)) {
     if (not(errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -196,12 +173,8 @@ bool BundleMgr::TrySendData(int fd,
     }
     return false;
   } else {
-    while (SendLabeledObject(fd, obj) != true) {
-      // If a Fetcher receives a kFetch command should receive the Labeled
-      // Object also.
-    }
+    BlockingSend(fd, path);
   }
-
   return true;
 }
 

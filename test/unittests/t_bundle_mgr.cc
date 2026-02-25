@@ -233,8 +233,8 @@ class T_BundleMgr : public ::testing::Test {
   testing::NiceMock<MockFetcher> *mock_fetcher_;
 
   int common_pipe_[2];
-  int &rfd_ = common_pipe_[0];
-  int &wfd_ = common_pipe_[1];
+  int rfd_ = common_pipe_[0];
+  int wfd_ = common_pipe_[1];
 };
 
 TEST_F(T_BundleMgr, ExchangeCT) {

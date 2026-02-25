@@ -33,10 +33,10 @@ class BundleMgr : SingleCopy {
   static void *MainBundleMgrFetcher(void *data);
   void SpawnFetchers();
   void JoinFetchers();
-  UniquePtr<CacheManager::LabeledObject> ReceiveLabeledObject(int fd) const;
-  bool SendLabeledObject(
-      int fd, const UniquePtr<CacheManager::LabeledObject> &obj) const;
-  bool TrySendData(int fd, UniquePtr<CacheManager::LabeledObject> &obj) const;
+  PathString ReceivePath(int fd) const;
+  bool TrySendPath(int fd, const PathString &path) const;
+
+  void FetchPath(const PathString &path);
 
   // CT stands for contiguous type
   template<typename CT,
@@ -53,6 +53,15 @@ class BundleMgr : SingleCopy {
 
     const T *ptr = reinterpret_cast<const T *>(&obj);
     while ((::write(fd, ptr, size)) != static_cast<ssize_t>(size)) {
+      // Percist until succesfful write
+    }
+  }
+
+  void BlockingSend(int fd, const PathString &path) const {
+    const size_t size = path.GetLength();
+    BlockingSend(fd, size);
+    while ((::write(fd, path.GetChars(), size * sizeof(char)))
+           != static_cast<ssize_t>(size * sizeof(char))) {
       // Percist until succesfful write
     }
   }
