@@ -121,7 +121,7 @@ void BundleMgr::SpawnFetchers() {
   }
 }
 
-void FetchPath(const PathString &path){
+void BundleMgr::FetchPath(const PathString &path){
   // TODO(christge): Implement that. Glue it with system's fetcher
 }
 

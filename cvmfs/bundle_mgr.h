@@ -5,6 +5,7 @@
 #ifndef CVMFS_BUNDLE_MGR_H_
 #define CVMFS_BUNDLE_MGR_H_
 
+#include <cassert>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -13,15 +14,14 @@
 #include "file_bundle.h"
 #include "mountpoint.h"
 #include "shortstring.h"
-#include "util/pointer.h"
 #include "util/single_copy.h"
 
 class MockFetcher;
 
 class BundleMgr : SingleCopy {
   friend class T_BundleMgr;
-  FRIEND_TEST(T_BundleMgr, ExchangeLabeledObjects);
   FRIEND_TEST(T_BundleMgr, ExchangeCT);
+  FRIEND_TEST(T_BundleMgr, ExchangePathString);
 
  public:
   BundleMgr(MountPoint *mp, fuse_ino_t ino);

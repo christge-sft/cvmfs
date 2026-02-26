@@ -17,7 +17,6 @@
 #include "options.h"
 #include "shortstring.h"
 #include "testutil.h"
-#include "util/pointer.h"
 #include "util/uuid.h"
 
 using namespace std;  // NOLINT
@@ -233,50 +232,28 @@ class T_BundleMgr : public ::testing::Test {
   testing::NiceMock<MockFetcher> *mock_fetcher_;
 
   int common_pipe_[2];
-  int rfd_ = common_pipe_[0];
-  int wfd_ = common_pipe_[1];
+  int &rfd_ = common_pipe_[0];
+  int &wfd_ = common_pipe_[1];
 };
 
 TEST_F(T_BundleMgr, ExchangeCT) {
   int integer = 42;
-  shash::Any hash;
-  uint64_t size = 42;
-  zlib::Algorithms algo{zlib::Algorithms::kNoCompression};
-  off_t offset = 42;
-  hash.Randomize(integer);
   std::string string = "Test_String";
 
   test_blocking_exchange(integer);
-  test_blocking_exchange(hash);
-  test_blocking_exchange(size);
-  test_blocking_exchange(algo);
-  test_blocking_exchange(offset);
   test_blocking_exchange(string);
 }
 
-TEST_F(T_BundleMgr, ExchangeLabeledObjects) {
-  shash::Any hash;
-  hash.Randomize(42);
-  CacheManager::Label label{};
-  UniquePtr<CacheManager::LabeledObject> object{
-      new CacheManager::LabeledObject{hash, label}};
+TEST_F(T_BundleMgr, ExchangePathString) {
+  PathString path("path/to/file.txt");
 
-  bundle_mgr_->SendLabeledObject(wfd_, object);
-  UniquePtr<CacheManager::LabeledObject>
-      replied_obj = bundle_mgr_->ReceiveLabeledObject(rfd_);
-  EXPECT_TRUE(replied_obj.IsValid());
-
-  EXPECT_EQ(object->id, replied_obj->id);
-  EXPECT_EQ(object->label.flags, replied_obj->label.flags);
-  EXPECT_EQ(object->label.size, replied_obj->label.size);
-  EXPECT_EQ(object->label.zip_algorithm, replied_obj->label.zip_algorithm);
-  EXPECT_EQ(object->label.range_offset, replied_obj->label.range_offset);
-  EXPECT_EQ(object->label.path, replied_obj->label.path);
+  bundle_mgr_->BlockingSend(wfd_,path);
+  EXPECT_EQ(path,bundle_mgr_->ReceivePath(rfd_));
 }
 
 TEST_F(T_BundleMgr, Fetch) {
-  bfm_->Reset();
   bundle_mgr_->Fetch();
+
   EXPECT_EQ(bfm_->counter_, bfm_->Size());
   EXPECT_EQ(mock_fetcher_->counter_, bfm_->Size());
 }
