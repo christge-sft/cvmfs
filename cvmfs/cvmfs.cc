@@ -1181,7 +1181,9 @@ static void cvmfs_open(fuse_req_t req, fuse_ino_t ino,
 
   if (dirent.IsBundleTrigger()) {
     // fetch dependences if not there already
-    BundleMgr bundle_mgr(mount_point_,  ino);
+    PathString trigger_path;
+    assert(GetPathForInode(ino,&trigger_path) && "Unable to retrieve the path of the trigger file");
+    BundleMgr bundle_mgr(mount_point_,  trigger_path);
     if (bundle_mgr) {
       bundle_mgr.Fetch();
     } else {

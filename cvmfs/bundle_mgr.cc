@@ -9,13 +9,16 @@
 #include <cassert>
 #include <vector>
 
+#include "catalog_mgr_client.h"
 #include "fetch.h"
-#include "util/inode.h"
+#include "shortstring.h"
 #include "util/posix.h"
+#include "mountpoint.h"
 
-BundleMgr::BundleMgr(MountPoint *mp, fuse_ino_t ino) : mount_point_(mp) {
-  is_valid_ = cvmfs::GetPathForInode(mp, mp->file_system(), ino, &path_);
-  is_valid_ &= cvmfs::GetDirentForInode(mp, mp->file_system(), ino, &dirent_);
+BundleMgr::BundleMgr(MountPoint *mp, const PathString &path)
+    : mount_point_(mp), path_(path) {
+  is_valid_ = mp->catalog_mgr()->LookupPath(
+      path, catalog::kLookupDefault, &dirent_);
   if (not is_valid_) {
     return;
   }
@@ -121,7 +124,7 @@ void BundleMgr::SpawnFetchers() {
   }
 }
 
-void BundleMgr::FetchPath(const PathString &path){
+void BundleMgr::FetchPath(const PathString &path) {
   // TODO(christge): Implement that. Glue it with system's fetcher
 }
 

@@ -19,7 +19,6 @@
 #include "testutil.h"
 #include "util/uuid.h"
 
-using namespace std;  // NOLINT
 class MockCatalogManager : public catalog::ClientCatalogManager {
  public:
   MockCatalogManager(MountPoint *mountpoint)
@@ -119,7 +118,6 @@ class T_BundleMgr : public ::testing::Test {
     mock_inode_cache_ = new testing::NiceMock<MockInodeCache>(
         64 * 1024, new perf::Statistics());
     mock_catalog_mgr_ = new testing::NiceMock<MockCatalogManager>(mount_point_);
-    mock_inode_tracker_ = new testing::NiceMock<MockInodeTracker>();
     mock_fetcher_ = new testing::NiceMock<MockFetcher>(
         nullptr,
         nullptr,
@@ -133,21 +131,12 @@ class T_BundleMgr : public ::testing::Test {
           *out = this->trigger_dirent_;
           return true;
         });
-    ON_CALL(*mock_inode_tracker_, FindPath(testing::_, testing::_))
-        .WillByDefault([this](glue::InodeEx *inode_ex,
-                              PathString *path) -> bool {
-          glue::InodeEx result(this->trigger_ino_, glue::InodeEx::kUnknownType);
-          *inode_ex = result;
-          *path = this->trigger_path_;
-          return true;
-        });
     // Plug mocks on mount_point_
     mount_point_->path_cache_ = mock_path_cache_;
     mount_point_->inode_cache_ = mock_inode_cache_;
     mount_point_->catalog_mgr_ = mock_catalog_mgr_;
-    mount_point_->inode_tracker_ = mock_inode_tracker_;
 
-    bundle_mgr_ = new BundleMgr(mount_point_, trigger_ino_);
+    bundle_mgr_ = new BundleMgr(mount_point_, trigger_path_);
 
     // Create a BundleFileMgr mock
     bfm_ = new testing::NiceMock<MockBundleFileMgr>(trigger_file_path_);
@@ -208,8 +197,8 @@ class T_BundleMgr : public ::testing::Test {
   FileSystem *file_system_;
   FileSystem::FileSystemInfo fs_info_;
   SimpleOptionsParser options_mgr_;
-  string tmp_path_;
-  string repo_path_;
+  std::string tmp_path_;
+  std::string repo_path_;
   unsigned used_fds_;
   /**
    * Initialize libuuid / open file descriptor on /dev/urandom
@@ -219,7 +208,6 @@ class T_BundleMgr : public ::testing::Test {
   PathString trigger_file_path_;
   BundleMgr *bundle_mgr_;
 
-  fuse_ino_t trigger_ino_{};
   catalog::DirectoryEntry trigger_dirent_{};
   PathString trigger_path_{};
 
@@ -228,7 +216,6 @@ class T_BundleMgr : public ::testing::Test {
   testing::NiceMock<MockPathCache> *mock_path_cache_;
   testing::NiceMock<MockInodeCache> *mock_inode_cache_;
   testing::NiceMock<MockCatalogManager> *mock_catalog_mgr_;
-  testing::NiceMock<MockInodeTracker> *mock_inode_tracker_;
   testing::NiceMock<MockFetcher> *mock_fetcher_;
 
   int common_pipe_[2];

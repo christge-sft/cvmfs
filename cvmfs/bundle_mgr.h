@@ -24,7 +24,7 @@ class BundleMgr : SingleCopy {
   FRIEND_TEST(T_BundleMgr, ExchangePathString);
 
  public:
-  BundleMgr(MountPoint *mp, fuse_ino_t ino);
+  BundleMgr(MountPoint *mp, const PathString &path);
   virtual ~BundleMgr() { delete bfm_; }
   void Fetch();
   explicit operator bool() const { return is_valid_; }
