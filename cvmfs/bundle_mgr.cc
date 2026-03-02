@@ -11,9 +11,9 @@
 
 #include "catalog_mgr_client.h"
 #include "fetch.h"
+#include "mountpoint.h"
 #include "shortstring.h"
 #include "util/posix.h"
-#include "mountpoint.h"
 
 BundleMgr::BundleMgr(MountPoint *mp, const PathString &path)
     : mount_point_(mp), path_(path) {
@@ -125,7 +125,27 @@ void BundleMgr::SpawnFetchers() {
 }
 
 void BundleMgr::FetchPath(const PathString &path) {
-  // TODO(christge): Implement that. Glue it with system's fetcher
+  catalog::DirectoryEntry dirent;
+  bool found = mount_point_->catalog_mgr()->LookupPath(
+      path, catalog::kLookupDefault, &dirent);
+  cvmfs::Fetcher *this_fetcher = dirent.IsExternalFile()
+                                     ? mount_point_->external_fetcher()
+                                     : mount_point_->fetcher();
+  if (not(found and this_fetcher)) {
+    // The path should be resolved to a valid dirent and a fetcher should be
+    // available
+    return;
+  }
+
+  CacheManager::Label label;
+  label.path = path.ToString();
+  label.size = dirent.size();
+  label.zip_algorithm = dirent.compression_algorithm();
+  if (mount_point_->catalog_mgr()->volatile_flag())
+    label.flags |= CacheManager::kLabelVolatile;
+  if (dirent.IsExternalFile())
+    label.flags |= CacheManager::kLabelExternal;
+  this_fetcher->Fetch(CacheManager::LabeledObject(dirent.checksum(), label));
 }
 
 void *BundleMgr::MainBundleMgrFetcher(void *data) {
@@ -144,6 +164,8 @@ void *BundleMgr::MainBundleMgrFetcher(void *data) {
     bool terminate = false;
     switch (cmd) {
       case Command::kFetch:
+        // TODO(christge): first expand the path prefixing it with the
+        // mountpoint
         mgr->FetchPath(mgr->ReceivePath(rfd));
         break;
       case Command::kTerminate:
