@@ -12,6 +12,7 @@
 #include "fetch.h"
 #include "file_bundle.h"
 #include "glue_buffer.h"
+#include "json_document.h"
 #include "lru_md.h"
 #include "mountpoint.h"
 #include "options.h"
@@ -22,7 +23,7 @@
 class MockCatalogManager : public catalog::ClientCatalogManager {
  public:
   MockCatalogManager(MountPoint *mountpoint)
-      : ClientCatalogManager(mountpoint){};
+      : ClientCatalogManager(mountpoint) { };
   virtual ~MockCatalogManager() = default;
   MOCK_METHOD(fuse_ino_t, MangleInode, (fuse_ino_t ino), (const));
   MOCK_METHOD(bool,
@@ -40,7 +41,7 @@ class MockFetcher : public cvmfs::Fetcher {
               BackoffThrottle *backoff_throttle,
               perf::StatisticsTemplate statistics)
       : Fetcher(cache_mgr, download_mgr, backoff_throttle, statistics)
-      , statistics_(statistics.statistics()){};
+      , statistics_(statistics.statistics()) { };
   int Fetch(const CacheManager::LabeledObject &object,
             const std::string &alt_url = "") override {
     return ++counter_;
@@ -79,17 +80,6 @@ class MockPathCache : public lru::PathCache {
 
  private:
   perf::Statistics *statistics_;
-};
-
-class MockBundleFileMgr : public BundleFileMgr {
- public:
-  MockBundleFileMgr(const PathString &trigger_file_path)
-      : BundleFileMgr(trigger_file_path){};
-  virtual ~MockBundleFileMgr() = default;
-  MOCK_METHOD(size_t, Size, (), (const));
-  MOCK_METHOD(PathString, GetNext, (), (override));
-  void Reset() { counter_ = 0; }
-  size_t counter_ = 0;
 };
 
 
@@ -135,28 +125,13 @@ class T_BundleMgr : public ::testing::Test {
     mount_point_->path_cache_ = mock_path_cache_;
     mount_point_->inode_cache_ = mock_inode_cache_;
     mount_point_->catalog_mgr_ = mock_catalog_mgr_;
+    mount_point_->fetcher_ = mock_fetcher_;
 
     bundle_mgr_ = new BundleMgr(mount_point_, trigger_path_);
 
     // Create a BundleFileMgr mock
-    bfm_ = new testing::NiceMock<MockBundleFileMgr>(trigger_file_path_);
-    ON_CALL(*bfm_, Size).WillByDefault(testing::Return(10));
-    EXPECT_EQ(bfm_->Size(), 10);
-    srand(time(NULL));
-    ON_CALL(*bfm_, GetNext).WillByDefault([this]()->PathString {
-      if (bfm_->counter_ < bfm_->Size()) {
-        bfm_->counter_ += 1;
-        return static_cast<PathString>("path/to/file.txt");
-      } else {
-        return PathString();
-      }
-    });
-    if (bundle_mgr_->fetcher_ != nullptr) {
-      delete bundle_mgr_->fetcher_;
-    }
+    bfm_ = new BundleFileMgr(JsonDocument::Create(CreateJsonTxt()));
 
-    bundle_mgr_->fetcher_ = mock_fetcher_;
-    // replace the real bfm_ with the mock
     delete bundle_mgr_->bfm_;
     bundle_mgr_->bfm_ = bfm_;
     EXPECT_TRUE(bundle_mgr_);
@@ -173,7 +148,6 @@ class T_BundleMgr : public ::testing::Test {
     //    EXPECT_EQ(used_fds_, GetNoUsedFds()) << ShowOpenFiles();
     delete file_system_;
     delete mount_point_;
-    delete mock_fetcher_;
     delete bundle_mgr_;
     ClosePipe(common_pipe_);
   }
@@ -212,7 +186,7 @@ class T_BundleMgr : public ::testing::Test {
   PathString trigger_path_{};
 
   // Mocks
-  testing::NiceMock<MockBundleFileMgr> *bfm_;
+  BundleFileMgr *bfm_;
   testing::NiceMock<MockPathCache> *mock_path_cache_;
   testing::NiceMock<MockInodeCache> *mock_inode_cache_;
   testing::NiceMock<MockCatalogManager> *mock_catalog_mgr_;
@@ -221,6 +195,27 @@ class T_BundleMgr : public ::testing::Test {
   int common_pipe_[2];
   int &rfd_ = common_pipe_[0];
   int &wfd_ = common_pipe_[1];
+
+  std::vector<std::string> dependencies_={"a_file_without_extension",
+                                          "a_file_with.extension",
+                                          "a/file/within/a/directory.foo"};
+
+  std::string CreateJsonTxt() {
+    std::ostringstream json;
+    json << "{";
+    json << "  \"name\": \"CVMFS_BUNDLE\",\n";
+    json << "  \"version\": \"1.0.0\",\n";
+    json << "  \"encoding\": \"UTF-8\",\n";
+    json << "  \"dependencies\": [\n";
+    for (size_t i = 0; i < dependencies_.size(); ++i) {
+      json << "    \"" << dependencies_[i] << "\"";
+      if (i < dependencies_.size() - 1) {
+        json << ",\n";
+      }
+    }
+    json << "]}";
+    return json.str();
+  }
 };
 
 TEST_F(T_BundleMgr, ExchangeCT) {
@@ -234,14 +229,13 @@ TEST_F(T_BundleMgr, ExchangeCT) {
 TEST_F(T_BundleMgr, ExchangePathString) {
   PathString path("path/to/file.txt");
 
-  bundle_mgr_->BlockingSend(wfd_,path);
-  EXPECT_EQ(path,bundle_mgr_->ReceivePath(rfd_));
+  bundle_mgr_->BlockingSend(wfd_, path);
+  EXPECT_EQ(path, bundle_mgr_->ReceivePath(rfd_));
 }
 
 TEST_F(T_BundleMgr, Fetch) {
   bundle_mgr_->Fetch();
 
-  EXPECT_EQ(bfm_->counter_, bfm_->Size());
   EXPECT_EQ(mock_fetcher_->counter_, bfm_->Size());
 }
 

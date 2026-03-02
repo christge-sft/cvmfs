@@ -96,9 +96,6 @@ class BundleMgr : SingleCopy {
   }
 
   MountPoint *mount_point_;
-#ifndef __TEST_CVMFS_MOCKFUSE
-  cvmfs::Fetcher *fetcher_;
-#endif
   catalog::DirectoryEntry dirent_;
   PathString path_;
   NameString fname_;
