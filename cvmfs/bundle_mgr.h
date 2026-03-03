@@ -25,7 +25,10 @@ class BundleMgr : SingleCopy {
 
  public:
   BundleMgr(MountPoint *mp, const PathString &path);
-  virtual ~BundleMgr() { delete bfm_; }
+  virtual ~BundleMgr() {
+    JoinFetchers();
+    delete bfm_;
+  }
   void Fetch();
   explicit operator bool() const { return is_valid_; }
 

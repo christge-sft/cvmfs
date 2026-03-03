@@ -31,11 +31,10 @@ BundleMgr::BundleMgr(MountPoint *mp, const PathString &path)
 
   bfm_ = new BundleFileMgr(bundle_file_path_);
   pipe_bm_[0] = pipe_bm_[1] = -1;
+  SpawnFetchers();
 }
 
 void BundleMgr::Fetch() {
-  SpawnFetchers();
-
   auto it = fetcher_pool_.begin();
   //TODO(christge):this shouldn't be an assertion
   assert(it!=fetcher_pool_.end());
