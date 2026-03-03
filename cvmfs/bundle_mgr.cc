@@ -7,7 +7,6 @@
 #include <pthread.h>
 
 #include <cassert>
-#include <vector>
 
 #include "catalog_mgr_client.h"
 #include "fetch.h"
@@ -31,95 +30,50 @@ BundleMgr::BundleMgr(MountPoint *mp, const PathString &path)
 
   bfm_ = new BundleFileMgr(bundle_file_path_);
   pipe_bm_[0] = pipe_bm_[1] = -1;
-  SpawnFetchers();
+  SpawnFetcher();
 }
 
 void BundleMgr::Fetch() {
-  auto it = fetcher_pool_.begin();
-  //TODO(christge):this shouldn't be an assertion
-  assert(it!=fetcher_pool_.end());
-  /*
-  if (it == fetcher_pool_.end()) {
-    LogCvmfs(kLogBundleMgr,
-             kLogDebug,
-             "The pool of fetchers is empty. Can't fetch dependencies. "
-             "Aborting Op.");
+  if (not is_valid_) {
+    LogCvmfs(kLogBundleMgr, kLogDebug, "BundleMgr is not in a valid state. Can't fetch!");
     return;
   }
-  */
 
   while (auto file = bfm_->GetNext()) {
-    auto thread_pool_entry = *it;
-    auto wfd = std::get<1>(thread_pool_entry);
-    // Find the first available Fetcher to send the data
-    while (not TrySendPath(wfd, file)) {
-      it = (++it == fetcher_pool_.end()) ? it : fetcher_pool_.begin();
-      wfd = std::get<1>(*it);
+    // TODO(christge): Make sure this TrySend is actually needed
+    while (not TrySendPath(back_channel_, file)) {
     }
-    it = (++it == fetcher_pool_.end()) ? it : fetcher_pool_.begin();
   }
-
-  JoinFetchers();
 }
 
-void BundleMgr::JoinFetchers() {
-  bool detach_mode = false;
-  // Join fetcher threads.
-  // Give a fetcher thread 10 seconds to join.
-  for (auto it = fetcher_pool_.begin(); it != fetcher_pool_.end(); ++it) {
-    auto &tuple = *it;
-    auto thread = std::get<0>(tuple);
-    auto fd = std::get<1>(tuple);
-
-    struct timespec ts;
-    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
-      LogCvmfs(kLogBundleMgr,
-               kLogDebug,
-               "Failed to read CLOCK_REALTIME. Detaching fetchers.");
-      detach_mode = true;
-    }
-
-    if (detach_mode) {
-      pthread_detach(thread);
-    } else {
-      ts.tv_sec += 10;
-      Command cmd = Command::kTerminate;
-      WritePipe(fd, &cmd, sizeof(Command));
-      if (pthread_timedjoin_np(thread, nullptr, &ts) != 0) {
-        LogCvmfs(kLogBundleMgr,
-                 kLogDebug,
-                 "Fetcher is busy for too long. Detaching.");
-        pthread_detach(thread);
-      }
-    }
-  }
+void BundleMgr::JoinFetcher() {
+  Command cmd = Command::kTerminate;
+  WritePipe(back_channel_, &cmd, sizeof(Command));
+  pthread_detach(*fetcher_thread_);
   ClosePipe(pipe_bm_);
+  delete fetcher_thread_;
 }
 
-void BundleMgr::SpawnFetchers() {
+void BundleMgr::SpawnFetcher() {
   MakePipe(pipe_bm_);
 
-  const size_t size = 1 + (bfm_->Size() / 30);  // Spawn at least one fetcher
-  for (size_t i = 0; i < size; ++i) {
-    pthread_t thread;
-    const int res = pthread_create(
-        &thread, nullptr, MainBundleMgrFetcher, this);
-    if (res != 0) {
-      LogCvmfs(kLogBundleMgr, kLogDebug, "Thread creation failed!");
-      continue;
-    }
-    int fd;
-    ReadPipe(pipe_bm_[0], &fd, sizeof(int));
-
-    // Make the write operation to the return pipe non blocking
-    // According to the man (7) page of write, when attempting to write
-    // n<=PIPE_BUF data on a non blocking pipe, it will either write all of them
-    // or errno will be set to EAGAIN. PIPE_BUF is at least 512bytes on and
-    // linux 4096bytes.
-    const int flags = fcntl(fd, F_GETFL);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    fetcher_pool_.push_back({thread, fd});
+  fetcher_thread_ = new pthread_t;
+  const int res = pthread_create(
+      fetcher_thread_, nullptr, MainBundleMgrFetcher, this);
+  if (res != 0) {
+    LogCvmfs(kLogBundleMgr, kLogDebug, "Thread creation failed!");
+    is_valid_ = false;
+    return;
   }
+  ReadPipe(pipe_bm_[0], &back_channel_, sizeof(int));
+
+  // Make the write operation to the return pipe non blocking
+  // According to the man (7) page of write, when attempting to write
+  // n<=PIPE_BUF data on a non blocking pipe, it will either write all of them
+  // or errno will be set to EAGAIN. PIPE_BUF is at least 512bytes on and
+  // linux 4096bytes.
+  const int flags = fcntl(back_channel_, F_GETFL);
+  fcntl(back_channel_, F_SETFL, flags | O_NONBLOCK);
 }
 
 void BundleMgr::FetchPath(const PathString &path) {

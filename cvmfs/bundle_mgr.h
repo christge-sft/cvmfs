@@ -6,9 +6,7 @@
 #define CVMFS_BUNDLE_MGR_H_
 
 #include <cassert>
-#include <tuple>
 #include <type_traits>
-#include <vector>
 
 #include "duplex_testing.h"
 #include "file_bundle.h"
@@ -26,7 +24,7 @@ class BundleMgr : SingleCopy {
  public:
   BundleMgr(MountPoint *mp, const PathString &path);
   virtual ~BundleMgr() {
-    JoinFetchers();
+    JoinFetcher();
     delete bfm_;
   }
   void Fetch();
@@ -34,8 +32,8 @@ class BundleMgr : SingleCopy {
 
  private:
   static void *MainBundleMgrFetcher(void *data);
-  void SpawnFetchers();
-  void JoinFetchers();
+  void SpawnFetcher();
+  void JoinFetcher();
   PathString ReceivePath(int fd) const;
   bool TrySendPath(int fd, const PathString &path) const;
 
@@ -108,7 +106,8 @@ class BundleMgr : SingleCopy {
   PathString bundle_file_path_;
   BundleFileMgr *bfm_;
 
-  std::vector<std::tuple<pthread_t, int> > fetcher_pool_;
+  pthread_t *fetcher_thread_;
+  int back_channel_;
 
   enum class Command {
     kTerminate,
