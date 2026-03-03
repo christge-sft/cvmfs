@@ -37,6 +37,9 @@ void BundleMgr::Fetch() {
   SpawnFetchers();
 
   auto it = fetcher_pool_.begin();
+  //TODO(christge):this shouldn't be an assertion
+  assert(it!=fetcher_pool_.end());
+  /*
   if (it == fetcher_pool_.end()) {
     LogCvmfs(kLogBundleMgr,
              kLogDebug,
@@ -44,14 +47,11 @@ void BundleMgr::Fetch() {
              "Aborting Op.");
     return;
   }
+  */
 
-  while (true) {
-    auto file = bfm_->GetNext();
-    if (file.IsEmpty()) {
-      // An empty file means no more dependencies available
-      break;
-    }
-    auto wfd = std::get<1>(*it);
+  while (auto file = bfm_->GetNext()) {
+    auto thread_pool_entry = *it;
+    auto wfd = std::get<1>(thread_pool_entry);
     // Find the first available Fetcher to send the data
     while (not TrySendPath(wfd, file)) {
       it = (++it == fetcher_pool_.end()) ? it : fetcher_pool_.begin();
