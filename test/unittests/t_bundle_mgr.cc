@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 
 #include <type_traits>
+#include <vector>
+#include <string>
 
 #include "bundle_mgr.h"
 #include "catalog_mgr_client.h"
@@ -49,7 +51,7 @@ class MockFetcher : public cvmfs::Fetcher {
   virtual ~MockFetcher() { delete statistics_; }
   void Reset() { counter_ = 0; }
 
-  size_t counter_ = 0;
+  inline static size_t counter_=0;
   perf::Statistics *statistics_;
 };
 
@@ -113,6 +115,11 @@ class T_BundleMgr : public ::testing::Test {
         nullptr,
         nullptr,
         perf::StatisticsTemplate("fetch", new perf::Statistics()));
+    mock_external_fetcher_ = new testing::NiceMock<MockFetcher>(
+        nullptr,
+        nullptr,
+        nullptr,
+        perf::StatisticsTemplate("fetch", new perf::Statistics()));
     // Determine mock behavior
     ON_CALL(*mock_catalog_mgr_, LookupPath(testing::_, testing::_, testing::_))
         .WillByDefault([this](const PathString &,
@@ -126,10 +133,10 @@ class T_BundleMgr : public ::testing::Test {
     mount_point_->inode_cache_ = mock_inode_cache_;
     mount_point_->catalog_mgr_ = mock_catalog_mgr_;
     mount_point_->fetcher_ = mock_fetcher_;
+    mount_point_->external_fetcher_ = mock_external_fetcher_;
 
     bundle_mgr_ = new BundleMgr(mount_point_, trigger_path_);
 
-    // Create a BundleFileMgr mock
     bfm_ = new BundleFileMgr(JsonDocument::Create(CreateJsonTxt()));
 
     delete bundle_mgr_->bfm_;
@@ -191,6 +198,7 @@ class T_BundleMgr : public ::testing::Test {
   testing::NiceMock<MockInodeCache> *mock_inode_cache_;
   testing::NiceMock<MockCatalogManager> *mock_catalog_mgr_;
   testing::NiceMock<MockFetcher> *mock_fetcher_;
+  testing::NiceMock<MockFetcher> *mock_external_fetcher_;
 
   int common_pipe_[2];
   int &rfd_ = common_pipe_[0];
@@ -235,7 +243,6 @@ TEST_F(T_BundleMgr, ExchangePathString) {
 
 TEST_F(T_BundleMgr, Fetch) {
   bundle_mgr_->Fetch();
-
   EXPECT_EQ(mock_fetcher_->counter_, bfm_->Size());
 }
 
