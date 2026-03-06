@@ -16,11 +16,7 @@
 
 BundleMgr::BundleMgr(MountPoint *mp, const PathString &path)
     : mount_point_(mp), path_(path) {
-  is_valid_ = mp->catalog_mgr()->LookupPath(
-      path, catalog::kLookupDefault, &dirent_);
-  if (not is_valid_) {
-    return;
-  }
+
   fname_ = GetFileName(path_);
   parent_path_ = GetParentPath(path_);
   // There is a naming convention regarding the name of the file with the

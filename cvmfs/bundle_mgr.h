@@ -97,7 +97,6 @@ class BundleMgr : SingleCopy {
   }
 
   MountPoint *mount_point_;
-  catalog::DirectoryEntry dirent_;
   PathString path_;
   NameString fname_;
   PathString parent_path_;
