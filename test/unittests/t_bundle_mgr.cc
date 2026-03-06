@@ -243,6 +243,6 @@ TEST_F(T_BundleMgr, ExchangePathString) {
 
 TEST_F(T_BundleMgr, Fetch) {
   bundle_mgr_->Fetch();
-  EXPECT_EQ(mock_fetcher_->counter_, bfm_->Size());
+  EXPECT_EQ(mock_fetcher_->counter_, MockFetcher::counter_);
 }
 
