@@ -11,12 +11,12 @@
 #include "catalog_mgr_client.h"
 #include "fetch.h"
 #include "mountpoint.h"
+#include "options.h"
 #include "shortstring.h"
 #include "util/posix.h"
 
 BundleMgr::BundleMgr(MountPoint *mp, const PathString &path)
     : mount_point_(mp), path_(path) {
-
   fname_ = GetFileName(path_);
   parent_path_ = GetParentPath(path_);
   // There is a naming convention regarding the name of the file with the
@@ -114,9 +114,20 @@ void *BundleMgr::MainBundleMgrFetcher(void *data) {
     bool terminate = false;
     switch (cmd) {
       case Command::kFetch:
-        // TODO(christge): first expand the path prefixing it with the
-        // mountpoint
-        mgr->FetchPath(mgr->ReceivePath(rfd));
+        {
+          auto path = mgr->ReceivePath(rfd);
+          std::string cvmfs_mount_dir;
+          if (not mgr->mount_point_->file_system()->options_mgr()->GetValue(
+                  "CVMFS_MOUNT_DIR", &cvmfs_mount_dir)) {
+            LogCvmfs(kLogBundleMgr,
+                     kLogDebug | kLogSyslogErr,
+                     "CVMFS_MOUNT_DIR missing");
+            terminate = true;
+          } else {
+            auto full_path = cvmfs_mount_dir + "/" + path.ToString();
+            mgr->FetchPath(PathString(full_path));
+          }
+        }
         break;
       case Command::kTerminate:
       default:
