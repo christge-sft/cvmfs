@@ -31,7 +31,9 @@ BundleMgr::BundleMgr(MountPoint *mp, const PathString &path)
 
 void BundleMgr::Fetch() {
   if (not is_valid_) {
-    LogCvmfs(kLogBundleMgr, kLogDebug, "BundleMgr is not in a valid state. Can't fetch!");
+    LogCvmfs(kLogBundleMgr,
+             kLogDebug,
+             "BundleMgr is not in a valid state. Can't fetch!");
     return;
   }
 

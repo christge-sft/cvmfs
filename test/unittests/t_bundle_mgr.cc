@@ -51,7 +51,7 @@ class MockFetcher : public cvmfs::Fetcher {
   virtual ~MockFetcher() { delete statistics_; }
   void Reset() { counter_ = 0; }
 
-  inline static size_t counter_=0;
+  inline static size_t counter_ = 0;
   perf::Statistics *statistics_;
 };
 
@@ -189,7 +189,8 @@ class T_BundleMgr : public ::testing::Test {
   PathString trigger_file_path_;
   BundleMgr *bundle_mgr_;
 
-  catalog::DirectoryEntry trigger_dirent_{};
+  catalog::DirectoryEntry
+      trigger_dirent_ = catalog::DirectoryEntryTestFactory::RegularFile();
   PathString trigger_path_{};
 
   // Mocks
