@@ -5,22 +5,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <type_traits>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "bundle_mgr.h"
 #include "catalog_mgr_client.h"
 #include "fetch.h"
 #include "file_bundle.h"
-#include "glue_buffer.h"
 #include "json_document.h"
-#include "lru_md.h"
 #include "mountpoint.h"
 #include "options.h"
 #include "shortstring.h"
-#include "testutil.h"
-#include "util/uuid.h"
 
 class MockCatalogManager : public catalog::ClientCatalogManager {
  public:
@@ -55,42 +50,10 @@ class MockFetcher : public cvmfs::Fetcher {
   perf::Statistics *statistics_;
 };
 
-class MockInodeTracker : public glue::InodeTracker {
- public:
-  virtual ~MockInodeTracker() = default;
-  MOCK_METHOD(bool,
-              FindPath,
-              (glue::InodeEx * inode_ex, PathString *path),
-              (override));
-};
-
-class MockInodeCache : public lru::InodeCache {
- public:
-  MockInodeCache(unsigned int cache_size, perf::Statistics *statistics)
-      : lru::InodeCache(cache_size, statistics), statistics_(statistics) { }
-  virtual ~MockInodeCache() { delete statistics_; }
-
- private:
-  perf::Statistics *statistics_;
-};
-
-class MockPathCache : public lru::PathCache {
- public:
-  MockPathCache(unsigned int cache_size, perf::Statistics *statistics)
-      : lru::PathCache(cache_size, statistics), statistics_(statistics) { }
-  virtual ~MockPathCache() { delete statistics_; }
-
- private:
-  perf::Statistics *statistics_;
-};
-
-
 class T_BundleMgr : public ::testing::Test {
  protected:
   virtual void SetUp() {
     repo_path_ = "repo";
-    uuid_dummy_ = cvmfs::Uuid::Create("");
-    used_fds_ = GetNoUsedFds();
     tmp_path_ = CreateTempDir("./cvmfs_ut_cache");
     options_mgr_.SetValue("CVMFS_CACHE_BASE", tmp_path_);
     options_mgr_.SetValue("CVMFS_SHARED_CACHE", "no");
@@ -105,10 +68,6 @@ class T_BundleMgr : public ::testing::Test {
     mount_point_ = MountPoint::Create("keys.cern.ch", file_system_);
 
     // MountPoint mocks allocation
-    mock_path_cache_ = new testing::NiceMock<MockPathCache>(
-        64 * 1024, new perf::Statistics());
-    mock_inode_cache_ = new testing::NiceMock<MockInodeCache>(
-        64 * 1024, new perf::Statistics());
     mock_catalog_mgr_ = new testing::NiceMock<MockCatalogManager>(mount_point_);
     mock_fetcher_ = new testing::NiceMock<MockFetcher>(
         nullptr,
@@ -129,8 +88,6 @@ class T_BundleMgr : public ::testing::Test {
           return true;
         });
     // Plug mocks on mount_point_
-    mount_point_->path_cache_ = mock_path_cache_;
-    mount_point_->inode_cache_ = mock_inode_cache_;
     mount_point_->catalog_mgr_ = mock_catalog_mgr_;
     mount_point_->fetcher_ = mock_fetcher_;
     mount_point_->external_fetcher_ = mock_external_fetcher_;
@@ -147,12 +104,10 @@ class T_BundleMgr : public ::testing::Test {
   }
 
   virtual void TearDown() {
-    delete uuid_dummy_;
     if (tmp_path_ != "")
       RemoveTree(tmp_path_);
     if (repo_path_ != "")
       RemoveTree(repo_path_);
-    //    EXPECT_EQ(used_fds_, GetNoUsedFds()) << ShowOpenFiles();
     delete file_system_;
     delete mount_point_;
     delete bundle_mgr_;
@@ -180,23 +135,15 @@ class T_BundleMgr : public ::testing::Test {
   SimpleOptionsParser options_mgr_;
   std::string tmp_path_;
   std::string repo_path_;
-  unsigned used_fds_;
-  /**
-   * Initialize libuuid / open file descriptor on /dev/urandom
-   */
-  cvmfs::Uuid *uuid_dummy_;
 
   PathString trigger_file_path_;
   BundleMgr *bundle_mgr_;
 
-  catalog::DirectoryEntry
-      trigger_dirent_ = catalog::DirectoryEntryTestFactory::RegularFile();
+  catalog::DirectoryEntry trigger_dirent_{};
   PathString trigger_path_{};
 
   // Mocks
   BundleFileMgr *bfm_;
-  testing::NiceMock<MockPathCache> *mock_path_cache_;
-  testing::NiceMock<MockInodeCache> *mock_inode_cache_;
   testing::NiceMock<MockCatalogManager> *mock_catalog_mgr_;
   testing::NiceMock<MockFetcher> *mock_fetcher_;
   testing::NiceMock<MockFetcher> *mock_external_fetcher_;
@@ -205,9 +152,9 @@ class T_BundleMgr : public ::testing::Test {
   int &rfd_ = common_pipe_[0];
   int &wfd_ = common_pipe_[1];
 
-  std::vector<std::string> dependencies_={"a_file_without_extension",
-                                          "a_file_with.extension",
-                                          "a/file/within/a/directory.foo"};
+  std::vector<std::string> dependencies_ = {"a_file_without_extension",
+                                            "a_file_with.extension",
+                                            "a/file/within/a/directory.foo"};
 
   std::string CreateJsonTxt() {
     std::ostringstream json;
