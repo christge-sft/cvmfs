@@ -30,8 +30,14 @@ class BundleMgr : SingleCopy {
  public:
   BundleMgr(MountPoint *mp, const PathString &path);
   virtual ~BundleMgr() {
-    JoinFetcherPool();
-    pthread_mutex_destroy(&worker_read_mutex_);
+    pthread_t reaper;
+    const int res = pthread_create(&reaper, nullptr, JoinFetcherPool, this);
+
+    if (res != 0) {
+      LogCvmfs(kLogBundleMgr, kLogDebug, "Reaper couldn't be spawned.");
+    } else {
+      pthread_detach(reaper);
+    }
     delete bfm_;
   }
   void Fetch();
@@ -39,8 +45,8 @@ class BundleMgr : SingleCopy {
 
  private:
   static void *MainBundleMgrFetcher(void *data);
+  static void *JoinFetcherPool(void *data);
   void SpawnFetcherPool();
-  void JoinFetcherPool();
   PathString ReceivePath(int fd) const;
   bool TrySendPath(int fd, const PathString &path) const;
 

@@ -152,24 +152,27 @@ void BundleMgr::Fetch() {
   }
 }
 
-void BundleMgr::JoinFetcherPool() {
-  if (pipe_bm_[1] < 0) return;
+void *BundleMgr::JoinFetcherPool(void* data) {
+  BundleMgr *mgr = static_cast<BundleMgr *>(data);
+  if (mgr->pipe_bm_[1] < 0) pthread_exit(nullptr);
   // Send one kTerminate per worker. Workers drain all queued kFetch
   // messages before reaching their kTerminate (FIFO pipe), so we can't
   // just close the pipe — that would EOF some workers mid-drain.
-  for (size_t i = 0; i < fetcher_threads_.size(); ++i) {
+  for (size_t i = 0; i < mgr->fetcher_threads_.size(); ++i) {
     Command cmd = Command::kTerminate;
     while (true) {
-      const ssize_t n = ::write(pipe_bm_[1], &cmd, sizeof(Command));
+      const ssize_t n = ::write(mgr->pipe_bm_[1], &cmd, sizeof(Command));
       if (n == sizeof(Command)) break;
       if (errno != EAGAIN && errno != EWOULDBLOCK) break;
     }
   }
   // Wait for every worker to drain its share of the queue and exit.
-  for (auto &t : fetcher_threads_) {
+  for (auto &t : mgr->fetcher_threads_) {
     pthread_join(*t, nullptr);
   }
-  ClosePipe(pipe_bm_);
+  ClosePipe(mgr->pipe_bm_);
+  pthread_mutex_destroy(&( mgr->worker_read_mutex_ ));
+  pthread_exit(nullptr);
 }
 
 void BundleMgr::SpawnFetcherPool() {
