@@ -67,11 +67,10 @@ static void BM_InHouse_AtomicCas32(benchmark::State& state) {
 BENCHMARK(BM_InHouse_AtomicCas32);
 
 static void BM_Std_AtomicCas32(benchmark::State& state) {
-    std::atomic<int32_t> a(0);
+    std::atomic<int32_t> a(42);
     for (auto _ : state) {
-        a.compare_exchange_strong(a, 1);
+        int32_t expected = a.load();
+        a.compare_exchange_strong(expected, 1);
     }
 }
 BENCHMARK(BM_Std_AtomicCas32);
-
-BENCHMARK_MAIN();
