@@ -23,7 +23,7 @@
 #include "directory_entry.h"
 #include "shortstring.h"
 #include "smallhash.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/exception.h"
 #include "util/mutex.h"
 #include "util/posix.h"  // IWYU pragma: keep
@@ -636,12 +636,12 @@ class InodeTracker {
              + "  misses(path): "
              + StringifyInt(atomic_read64(&num_misses_path));
     }
-    atomic_int64 num_inserts;
-    atomic_int64 num_removes;
-    atomic_int64 num_references;
-    atomic_int64 num_hits_inode;
-    atomic_int64 num_hits_path;
-    atomic_int64 num_misses_path;
+    std::atomic<int64_t> num_inserts;
+    std::atomic<int64_t> num_removes;
+    std::atomic<int64_t> num_references;
+    std::atomic<int64_t> num_hits_inode;
+    std::atomic<int64_t> num_hits_path;
+    std::atomic<int64_t> num_misses_path;
   };
   Statistics GetStatistics() { return statistics_; }
 

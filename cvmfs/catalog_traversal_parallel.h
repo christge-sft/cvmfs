@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "catalog_traversal.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/exception.h"
 #include "util/tube.h"
 
@@ -69,7 +69,7 @@ class CatalogTraversalParallel : public CatalogTraversalBase<ObjectFetcherT> {
 
     void WakeParents() { this->NotifyListeners(0); }
 
-    atomic_int32 children_unprocessed;
+    std::atomic<int32_t> children_unprocessed;
   };
 
  public:
@@ -405,7 +405,7 @@ class CatalogTraversalParallel : public CatalogTraversalBase<ObjectFetcherT> {
   TraversalType effective_traversal_type_;
 
   pthread_t *threads_process_;
-  atomic_int32 num_errors_;
+  std::atomic<int32_t> num_errors_;
 
   Tube<CatalogJob> pre_job_queue_;
   Tube<CatalogJob> post_job_queue_;

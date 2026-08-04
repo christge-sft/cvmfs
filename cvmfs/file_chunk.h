@@ -21,7 +21,7 @@
 #include "crypto/hash.h"
 #include "shortstring.h"
 #include "smallhash.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/single_copy.h"
 
 /**

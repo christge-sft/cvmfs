@@ -9,7 +9,7 @@
 
 #include "duplex_curl.h"
 #include "subscriber.h"
-#include "util/atomic.h"
+#include <atomic>
 
 namespace notify {
 
@@ -57,7 +57,7 @@ class SubscriberSSE : public Subscriber {
   std::string topic_;
   std::string buffer_;
 
-  mutable atomic_int32 should_quit_;
+  mutable std::atomic<int32_t> should_quit_;
 };
 
 }  // namespace notify

@@ -16,7 +16,7 @@
 #include "duplex_testing.h"
 #include "fd_refcount_mgr.h"
 #include "manifest_fetch.h"
-#include "util/atomic.h"
+#include <atomic>
 
 namespace catalog {
 class DirectoryEntry;
@@ -175,7 +175,7 @@ class PosixCacheManager : public CacheManager {
    * descriptors from transactions are closed.  This is indicated by a zero
    * value in this variable.
    */
-  atomic_int32 no_inflight_txns_;
+  std::atomic<int32_t> no_inflight_txns_;
 
   static const char kMagicRefcount = 123;
   static const char kMagicNoRefcount = '\0';
@@ -203,7 +203,7 @@ class PosixCacheManager : public CacheManager {
    * starts at 0 and the flag is checked (lock-free) on every StartTxn().  See
    * issue #4217.
    */
-  atomic_int32 cache_dirs_created_;
+  std::atomic<int32_t> cache_dirs_created_;
   /**
    * Serializes the one-time skeleton creation in EnsureCacheDirectories().
    */

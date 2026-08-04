@@ -22,7 +22,7 @@
 #include "ingestion/ingestion_source.h"
 #include "object_fetcher.h"
 #include "upload_facility.h"
-#include "util/atomic.h"
+#include <atomic>
 
 pid_t GetParentPid(const pid_t pid);
 std::string GetProcessname(const pid_t pid);
@@ -306,7 +306,7 @@ class MockCatalog : public MockObjectStorage<MockCatalog> {
  public:
   static const std::string rhs;
   static const shash::Any root_hash;
-  static atomic_int32 instances;
+  static std::atomic<int32_t> instances;
 
  public:
   struct NestedCatalog {

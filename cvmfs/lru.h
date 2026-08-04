@@ -50,7 +50,7 @@
 
 #include "smallhash.h"
 #include "statistics.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/platform.h"
 #include "util/single_copy.h"
 #include "util/smalloc.h"

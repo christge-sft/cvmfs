@@ -17,7 +17,7 @@
 #include "file_bundle.h"
 #include "mountpoint.h"
 #include "shortstring.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/posix.h"
 #include "util/single_copy.h"
 
@@ -168,7 +168,7 @@ class BundleMgr : SingleCopy {
    * Set on destruction: queued work is drained but no longer processed, so
    * that unmounting does not wait for pending downloads.
    */
-  atomic_int32 terminating_;
+  std::atomic<int32_t> terminating_;
   bool is_valid_ = true;
 };
 #endif  // CVMFS_BUNDLE_MGR_H_

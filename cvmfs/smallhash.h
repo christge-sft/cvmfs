@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <new>
 
-#include "util/atomic.h"
+#include <atomic>
 #include "util/murmur.hxx"
 #include "util/prng.h"
 #include "util/smalloc.h"

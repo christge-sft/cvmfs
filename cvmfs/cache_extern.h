@@ -18,7 +18,7 @@
 #include "fd_table.h"
 #include "duplex_testing.h"
 #include "quota.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 
 
@@ -313,7 +313,7 @@ class ExternalCacheManager : public CacheManager {
   bool spawned_;
   bool terminated_;
   pthread_rwlock_t rwlock_fd_table_;
-  atomic_int64 next_request_id_;
+  std::atomic<int64_t> next_request_id_;
 
   /**
    * Serialize concurrent write access to the session fd

@@ -35,7 +35,7 @@
 #include "path_filters/relaxed_path_filter.h"
 #include "reflog.h"
 #include "upload.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/exception.h"
 #include "util/logging.h"
 #include "util/posix.h"
@@ -106,9 +106,9 @@ pthread_mutex_t lock_pipe = PTHREAD_MUTEX_INITIALIZER;
 unsigned retries = 3;
 catalog::RelaxedPathFilter *pathfilter = NULL;
 catalog::InclusionSpec *inclusion_spec = NULL;
-atomic_int64 overall_chunks;
-atomic_int64 overall_new;
-atomic_int64 chunk_queue;
+std::atomic<int64_t> overall_chunks;
+std::atomic<int64_t> overall_new;
+std::atomic<int64_t> chunk_queue;
 bool preload_cache = false;
 string *preload_cachedir = NULL;
 bool inspect_existing_catalogs = false;

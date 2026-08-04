@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <pthread.h>
 
-#include "util/atomic.h"
+#include <atomic>
 
 class T_Atomic : public ::testing::Test {
  protected:
@@ -20,7 +20,7 @@ class T_Atomic : public ::testing::Test {
   static void *concurrent_writer32(void *atomic) {
     const int cycles = T_Atomic::concurrent_writer_cycles;
 
-    atomic_int32 *atomic32 = static_cast<atomic_int32 *>(atomic);
+    std::atomic<int32_t> *atomic32 = static_cast<std::atomic<int32_t> *>(atomic);
     for (int i = 0; i < cycles; ++i) {
       if (i % 5 == 0) {
         atomic_dec32(atomic32);
@@ -35,7 +35,7 @@ class T_Atomic : public ::testing::Test {
   static void *concurrent_writer64(void *atomic) {
     const int cycles = T_Atomic::concurrent_writer_cycles;
 
-    atomic_int64 *atomic32 = static_cast<atomic_int64 *>(atomic);
+    std::atomic<int64_t> *atomic32 = static_cast<std::atomic<int64_t> *>(atomic);
     for (int i = 0; i < cycles; ++i) {
       if (i % 5 == 0) {
         atomic_dec64(atomic32);
@@ -50,7 +50,7 @@ class T_Atomic : public ::testing::Test {
   static void *concurrent_assigner32(void *atomic) {
     const int cycles = T_Atomic::concurrent_writer_cycles;
 
-    atomic_int32 *atomic32 = static_cast<atomic_int32 *>(atomic);
+    std::atomic<int32_t> *atomic32 = static_cast<std::atomic<int32_t> *>(atomic);
     for (int i = 0; i < cycles; ++i) {
       atomic_write32(atomic32, static_cast<int32_t>(i));
     }
@@ -61,7 +61,7 @@ class T_Atomic : public ::testing::Test {
   static void *concurrent_assigner64(void *atomic) {
     const int cycles = T_Atomic::concurrent_writer_cycles;
 
-    atomic_int64 *atomic64 = static_cast<atomic_int64 *>(atomic);
+    std::atomic<int64_t> *atomic64 = static_cast<std::atomic<int64_t> *>(atomic);
     for (int i = 0; i < cycles; ++i) {
       atomic_write64(atomic64, static_cast<int64_t>(i));
     }
@@ -70,8 +70,8 @@ class T_Atomic : public ::testing::Test {
   }
 
  protected:
-  atomic_int32 atomic32_;
-  atomic_int64 atomic64_;
+  std::atomic<int32_t> atomic32_;
+  std::atomic<int64_t> atomic64_;
 
   static const int concurrent_writer_cycles = 1000000;
   static const int concurrent_writer_result = 600000;
