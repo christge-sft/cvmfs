@@ -32,7 +32,7 @@ class Fence : public SingleCopy {
   }
 
   void Enter() {
-    while (atomic_read32(&blocking_)) {
+    while ((blocking_).load()) {
       SafeSleepMs(kBusyWaitBackoffMs);
     }
     atomic_inc64(&counter_);
@@ -47,7 +47,7 @@ class Fence : public SingleCopy {
    */
   void Drain() {
     Close();
-    while (atomic_read64(&counter_) > 0) {
+    while ((counter_).load() > 0) {
       SafeSleepMs(kBusyWaitBackoffMs);
     }
   }

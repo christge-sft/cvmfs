@@ -704,12 +704,12 @@ TYPED_TEST(T_Uploaders, BatchedRemoveNoDeadlockSlow) {
   ASSERT_EQ(0, pthread_create(&worker, NULL, BatchedRemoveWorker, &ctx));
 
   unsigned elapsed_ms = 0;
-  while (!atomic_read32(&ctx.done) && elapsed_ms < kTimeoutMs) {
+  while (!(ctx.done).load() && elapsed_ms < kTimeoutMs) {
     SafeSleepMs(100);
     elapsed_ms += 100;
   }
 
-  if (!atomic_read32(&ctx.done)) {
+  if (!(ctx.done).load()) {
     // Worker is stuck inside RemoveAsync's ++jobs_in_flight_.  The uploader
     // state is unsafe to touch, so report the failure and abort the process
     // rather than risk UB at tear-down or corrupting later tests.

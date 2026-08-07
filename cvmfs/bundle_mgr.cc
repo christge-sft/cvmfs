@@ -365,7 +365,7 @@ void *BundleMgr::MainBundleMgrDispatcher(void *data) {
     const PathString path = mgr->ReceivePath(rfd);
     // While terminating, drain the queue without processing so that
     // unmounting does not wait for spec downloads
-    if (atomic_read32(&mgr->terminating_) == 0)
+    if ((mgr->terminating_).load() == 0)
       mgr->ProcessTrigger(path);
   }
 
@@ -410,7 +410,7 @@ void *BundleMgr::MainBundleMgrFetcher(void *data) {
         }
         // While terminating, drain the queue without fetching so that
         // unmounting does not wait for pending downloads
-        if (atomic_read32(&mgr->terminating_) == 0)
+        if ((mgr->terminating_).load() == 0)
           mgr->FetchPath(path);
       } break;
       case Command::kTerminate:

@@ -173,25 +173,25 @@ MockHTTPServer::MockHTTPServer(int port) {
 }
 
 MockHTTPServer::~MockHTTPServer() {
-  if (atomic_read32(&running_)) {
+  if ((running_).load()) {
     Stop();
   }
 }
 
 bool MockHTTPServer::Start() {
-  if (atomic_read32(&running_))
+  if ((running_).load())
     return false;
   atomic_write32(&running_, 1);
   pthread_create(&server_thread_, NULL, Main, this);
   // wait for server thread to open the socket
-  while (!atomic_read32(&server_thread_ready_)) {
+  while (!(server_thread_ready_).load()) {
   }
   return true;
 }
 
 
 bool MockHTTPServer::Stop() {
-  if (!atomic_read32(&running_))
+  if (!(running_).load())
     return false;
   atomic_write32(&running_, 0);
   pthread_join(server_thread_, NULL);
@@ -200,7 +200,7 @@ bool MockHTTPServer::Stop() {
 
 bool MockHTTPServer::SetResponseCallback(
     HTTPResponse (*callback_func)(const HTTPRequest &, void *), void *data) {
-  if (atomic_read32(&running_))
+  if ((running_).load())
     return false;
   callback_func_ = callback_func;
   callback_data_ = data;

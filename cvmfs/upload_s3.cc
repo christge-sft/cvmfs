@@ -293,7 +293,7 @@ bool S3Uploader::Create() {
 
 
 unsigned int S3Uploader::GetNumberOfErrors() const {
-  return atomic_read32(&io_errors_);
+  return (io_errors_).load();
 }
 
 
