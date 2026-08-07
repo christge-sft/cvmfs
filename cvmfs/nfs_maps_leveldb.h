@@ -12,7 +12,7 @@
 #include "crypto/hash.h"
 #include "leveldb/env.h"
 #include "nfs_maps.h"
-#include "util/atomic.h"
+#include <atomic>
 
 
 namespace leveldb {

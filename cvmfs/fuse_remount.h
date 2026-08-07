@@ -13,7 +13,7 @@
 #include "duplex_fuse.h"
 #include "fence.h"
 #include "fuse_evict.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/single_copy.h"
 
 namespace cvmfs {

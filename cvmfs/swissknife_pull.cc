@@ -35,7 +35,7 @@
 #include "path_filters/relaxed_path_filter.h"
 #include "reflog.h"
 #include "upload.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/exception.h"
 #include "util/logging.h"
 #include "util/posix.h"

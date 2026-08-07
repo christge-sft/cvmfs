@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-#include "util/atomic.h"
+#include <atomic>
 
 #ifdef CVMFS_NAMESPACE_GUARD
 namespace CVMFS_NAMESPACE_GUARD {

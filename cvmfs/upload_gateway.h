@@ -11,7 +11,7 @@
 #include "repository_tag.h"
 #include "session_context.h"
 #include "upload_facility.h"
-#include "util/atomic.h"
+#include <atomic>
 
 namespace upload {
 

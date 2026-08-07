@@ -21,7 +21,7 @@
 #include "shortstring.h"
 #include "testutil.h"
 #include "util/algorithm.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/file_guard.h"
 #include "util/mmap_file.h"
 #include "util/pipe.h"

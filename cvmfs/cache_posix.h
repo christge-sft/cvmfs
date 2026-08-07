@@ -16,7 +16,7 @@
 #include "duplex_testing.h"
 #include "fd_refcount_mgr.h"
 #include "manifest_fetch.h"
-#include "util/atomic.h"
+#include <atomic>
 
 namespace catalog {
 class DirectoryEntry;

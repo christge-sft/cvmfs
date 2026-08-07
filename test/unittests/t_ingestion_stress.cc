@@ -17,7 +17,7 @@
 #include "ingestion/item_mem.h"
 #include "ingestion/pipeline.h"
 #include "testutil.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/prng.h"
 #include "util/smalloc.h"
 #include "util/string.h"

@@ -14,7 +14,7 @@
 #include <cstring>
 #include <string>
 
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 #include "util/posix.h"
 #include "util/string.h"

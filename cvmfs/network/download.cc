@@ -56,7 +56,7 @@
 #include "sanitizer.h"
 #include "ssl.h"
 #include "util/algorithm.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/exception.h"
 #include "util/logging.h"
 #include "util/posix.h"

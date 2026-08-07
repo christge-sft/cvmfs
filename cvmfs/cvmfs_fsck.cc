@@ -24,7 +24,7 @@
 
 #include "compression/compression.h"
 #include "crypto/hash.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/logging.h"
 #include "util/platform.h"
 #include "util/posix.h"

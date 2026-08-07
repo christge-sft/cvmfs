@@ -18,7 +18,7 @@
 #include "uid_map.h"
 #include "upload.h"
 #include "util/algorithm.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 #include "util/future.h"
 #include "util/logging.h"

@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "util/atomic.h"
+#include <atomic>
 #include "util/export.h"
 #include "util/murmur.hxx"
 #include "util/platform.h"

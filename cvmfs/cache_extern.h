@@ -18,7 +18,7 @@
 #include "fd_table.h"
 #include "duplex_testing.h"
 #include "quota.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 
 

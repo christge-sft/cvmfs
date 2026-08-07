@@ -9,7 +9,7 @@
 
 #include "ingestion/item.h"
 #include "ingestion/task.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/posix.h"
 #include "util/tube.h"
 

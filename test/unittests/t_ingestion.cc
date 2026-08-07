@@ -23,7 +23,7 @@
 #include "ingestion/task_write.h"
 #include "testutil.h"
 #include "upload_facility.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/pointer.h"
 #include "util/posix.h"
 #include "util/smalloc.h"

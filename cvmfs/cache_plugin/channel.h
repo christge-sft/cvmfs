@@ -18,7 +18,7 @@
 #include "crypto/hash.h"
 #include "manifest.h"
 #include "smallhash.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/murmur.hxx"
 #include "util/single_copy.h"
 

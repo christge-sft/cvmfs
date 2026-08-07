@@ -11,7 +11,7 @@
 #include <string>
 
 #include "upload_facility.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 
 namespace upload {

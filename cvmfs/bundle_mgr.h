@@ -17,7 +17,7 @@
 #include "file_bundle.h"
 #include "mountpoint.h"
 #include "shortstring.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/posix.h"
 #include "util/single_copy.h"
 

@@ -18,7 +18,7 @@
 #include "shrinkwrap/posix/interface.h"
 #include "shrinkwrap/spec_tree.h"
 #include "statistics.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 #include "util/logging.h"
 #include "util/platform.h"

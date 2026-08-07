@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "util/atomic.h"
+#include <atomic>
 
 #ifdef CVMFS_NAMESPACE_GUARD
 namespace CVMFS_NAMESPACE_GUARD {

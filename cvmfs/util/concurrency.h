@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "util/async.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/export.h"
 #include "util/mutex.h"
 #include "util/single_copy.h"

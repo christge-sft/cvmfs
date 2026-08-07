@@ -23,7 +23,7 @@
 #include "directory_entry.h"
 #include "shortstring.h"
 #include "smallhash.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/exception.h"
 #include "util/mutex.h"
 #include "util/posix.h"  // IWYU pragma: keep

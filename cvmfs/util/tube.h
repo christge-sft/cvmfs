@@ -12,7 +12,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "util/atomic.h"
+#include <atomic>
 #include "util/mutex.h"
 #include "util/single_copy.h"
 

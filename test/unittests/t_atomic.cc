@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <pthread.h>
 
-#include "util/atomic.h"
+#include <atomic>
 
 class T_Atomic : public ::testing::Test {
  protected:

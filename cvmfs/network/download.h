@@ -27,7 +27,7 @@
 #include "network/sharding_policy.h"
 #include "ssl.h"
 #include "statistics.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/pipe.h"
 #include "util/pointer.h"
 #include "util/prng.h"

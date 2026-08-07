@@ -17,7 +17,7 @@
 #include "file_chunk.h"
 #include "ingestion/chunk_detector.h"
 #include "ingestion/ingestion_source.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/pointer.h"
 #include "util/single_copy.h"
 

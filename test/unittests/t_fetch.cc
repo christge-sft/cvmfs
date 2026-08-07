@@ -13,7 +13,7 @@
 #include "network/download.h"
 #include "statistics.h"
 #include "testutil.h"
-#include "util/atomic.h"
+#include <atomic>
 
 using namespace std;  // NOLINT
 

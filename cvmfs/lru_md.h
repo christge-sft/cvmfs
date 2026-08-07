@@ -14,7 +14,7 @@
 #include "duplex_fuse.h"
 #include "lru.h"
 #include "shortstring.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/logging.h"
 #include "util/murmur.hxx"
 

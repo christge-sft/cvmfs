@@ -16,7 +16,7 @@
 
 #include "duplex_cares.h"  // IWYU pragma: keep
 #include "duplex_testing.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/prng.h"
 #include "util/single_copy.h"
 

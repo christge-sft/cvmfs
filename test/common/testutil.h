@@ -22,7 +22,7 @@
 #include "ingestion/ingestion_source.h"
 #include "object_fetcher.h"
 #include "upload_facility.h"
-#include "util/atomic.h"
+#include <atomic>
 
 pid_t GetParentPid(const pid_t pid);
 std::string GetProcessname(const pid_t pid);

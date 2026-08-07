@@ -47,7 +47,7 @@
 #include "manifest.h"
 #include "manifest_fetch.h"
 #include "quota.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/logging.h"
 #include "util/mutex.h"
 #include "util/platform.h"

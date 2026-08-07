@@ -14,7 +14,7 @@
 #include "cache_plugin/libcvmfs_cache.h"
 #include "cache_posix.h"
 #include "smallhash.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/logging.h"
 #include "util/posix.h"
 #include "util/string.h"

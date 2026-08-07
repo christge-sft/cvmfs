@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "util/atomic.h"
+#include <atomic>
 #include "util/mutex.h"
 
 #ifdef CVMFS_NAMESPACE_GUARD

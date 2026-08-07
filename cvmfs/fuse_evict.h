@@ -12,7 +12,7 @@
 #include "duplex_fuse.h"
 #include "duplex_testing.h"
 #include "shortstring.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 #include "util/single_copy.h"
 

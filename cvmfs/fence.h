@@ -6,7 +6,7 @@
 #define CVMFS_FENCE_H_
 
 #include "duplex_testing.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/posix.h"
 #include "util/single_copy.h"
 

@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "malloc_arena.h"
-#include "util/atomic.h"
+#include <atomic>
 
 /**
  * To avoid memory fragmentation, allocate the data buffer inside the BlockItem

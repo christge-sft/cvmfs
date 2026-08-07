@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "util/algorithm.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/string.h"
 
 

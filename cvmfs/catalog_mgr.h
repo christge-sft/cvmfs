@@ -20,7 +20,7 @@
 #include "manifest_fetch.h"
 #include "statistics.h"
 #include "util/algorithm.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/logging.h"
 #include "util/platform.h"
 

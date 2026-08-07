@@ -9,7 +9,7 @@
 
 #include "duplex_curl.h"
 #include "subscriber.h"
-#include "util/atomic.h"
+#include <atomic>
 
 namespace notify {
 

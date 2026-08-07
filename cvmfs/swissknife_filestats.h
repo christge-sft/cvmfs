@@ -12,7 +12,7 @@
 #include "catalog_traversal.h"
 #include "sql.h"
 #include "swissknife.h"
-#include "util/atomic.h"
+#include <atomic>
 
 using namespace std;  // NOLINT
 

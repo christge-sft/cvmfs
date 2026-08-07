@@ -15,7 +15,7 @@
 #include "repository_tag.h"
 #include "statistics.h"
 #include "upload_spooler_definition.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/concurrency.h"
 #include "util/pointer.h"
 #include "util/posix.h"

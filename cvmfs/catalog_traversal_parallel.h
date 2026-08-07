@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "catalog_traversal.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/exception.h"
 #include "util/tube.h"
 

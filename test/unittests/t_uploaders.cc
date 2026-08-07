@@ -17,7 +17,7 @@
 #include "upload_local.h"
 #include "upload_s3.h"
 #include "upload_spooler_definition.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/file_guard.h"
 #include "util/logging.h"
 #include "util/posix.h"

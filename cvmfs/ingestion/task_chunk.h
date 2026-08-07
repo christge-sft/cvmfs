@@ -12,7 +12,7 @@
 #include "ingestion/item.h"
 #include "ingestion/task.h"
 #include "smallhash.h"
-#include "util/atomic.h"
+#include <atomic>
 #include "util/murmur.hxx"
 #include "util/posix.h"
 #include "util/tube.h"

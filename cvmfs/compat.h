@@ -22,7 +22,7 @@
 #include "glue_buffer.h"
 #include "shortstring.h"
 #include "util/algorithm.h"
-#include "util/atomic.h"
+#include <atomic>
 
 namespace compat {
 
