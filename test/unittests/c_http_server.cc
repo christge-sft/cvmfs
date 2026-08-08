@@ -228,7 +228,7 @@ void *MockHTTPServer::Main(void *data) {
   select_timeout.tv_usec = 2000;  // 2 ms
   fd_set rfds;
   atomic_inc32(&(server->server_thread_ready_));
-  while (atomic_read32(&(server->running_))) {
+  while ((server->running_.load())) {
     // Wait for traffic
     FD_ZERO(&rfds);
     FD_SET(listen_sockfd, &rfds);
