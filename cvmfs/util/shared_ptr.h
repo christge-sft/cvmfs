@@ -34,7 +34,7 @@ class SharedPtr {
   ~SharedPtr() {  // never throws
     if (count_) {
       atomic_dec64(count_);
-      if (atomic_read64(count_) == 0) {
+      if (count_.load() == 0) {
         delete value_;
         delete count_;
       }
@@ -83,7 +83,7 @@ class SharedPtr {
   void Reset() {  // never throws
     if (count_) {
       atomic_dec64(count_);
-      if (atomic_read64(count_) == 0) {
+      if (count_.load() == 0) {
         delete value_;
         delete count_;
       }
@@ -115,11 +115,11 @@ class SharedPtr {
   atomic_int64 *GetCountPtr() const { return count_; }
 
   bool Unique() const {  // never throws
-    return count_ && (atomic_read64(count_) == 1);
+    return count_ && (count_.load() == 1);
   }
 
   int64_t UseCount() const {  // never throws
-    return count_ ? atomic_read64(count_) : -1;
+    return count_ ? count_.load() : -1;
   }
 
  private:
