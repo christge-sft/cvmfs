@@ -23,7 +23,7 @@ class T_Atomic : public ::testing::Test {
     atomic_int32 *atomic32 = static_cast<atomic_int32 *>(atomic);
     for (int i = 0; i < cycles; ++i) {
       if (i % 5 == 0) {
-        atomic_dec32(atomic32);
+        atomic32.fetch_sub(1);
       } else {
         atomic32.fetch_add(1);
       }
@@ -38,7 +38,7 @@ class T_Atomic : public ::testing::Test {
     atomic_int64 *atomic32 = static_cast<atomic_int64 *>(atomic);
     for (int i = 0; i < cycles; ++i) {
       if (i % 5 == 0) {
-        atomic_dec64(atomic32);
+        atomic32.fetch_sub(1);
       } else {
         atomic32.fetch_add(1);
       }
@@ -144,8 +144,8 @@ TEST_F(T_Atomic, DecrementAtomicInts) {
   int64_t i64;
 
   for (int i = cycles; i > 0; --i) {
-    atomic_dec32(&atomic32_);
-    atomic_dec64(&atomic64_);
+    (atomic32_).fetch_sub(1);
+    (atomic64_).fetch_sub(1);
 
     i32 = (atomic32_).load();
     i64 = (atomic64_).load();
