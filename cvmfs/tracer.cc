@@ -34,7 +34,7 @@ void Tracer::Activate(const int buffer_size,
   ring_buffer_ = new BufferEntry[buffer_size_];
   commit_buffer_ = new atomic_int32[buffer_size_];
   for (int i = 0; i < buffer_size_; i++)
-    atomic_init32(&commit_buffer_[i]);
+    commit_buffer_[i].store(0);
 
   int retval;
   retval = pthread_cond_init(&sig_continue_trace_, NULL);
