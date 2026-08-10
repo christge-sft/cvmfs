@@ -138,7 +138,7 @@ class WritableCatalog : public Catalog {
     dirty_children_.store(count);
   }
   int DecrementDirtyChildren() {
-    return atomic_xadd32(&dirty_children_, -1) - 1;
+    return dirty_children_.fetch_add(-1) - 1;
   }
 
  private:

@@ -16,7 +16,7 @@ static void BM_InHouse_AtomicXadd32(benchmark::State& state) {
     atomic_int32 a;
     (a).store(0);
     for (auto _ : state) {
-        atomic_xadd32(&a, 1);
+        a.fetch_add(1);
     }
 }
 BENCHMARK(BM_InHouse_AtomicXadd32);
