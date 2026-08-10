@@ -224,10 +224,10 @@ Tracer::Tracer()
     , ring_buffer_(NULL)
     , commit_buffer_(NULL) {
   memset(&thread_flush_, 0, sizeof(thread_flush_));
-  atomic_init32(&seq_no_);
-  atomic_init32(&flushed_);
-  atomic_init32(&terminate_flush_thread_);
-  atomic_init32(&flush_immediately_);
+  (seq_no_).store(0);
+  (flushed_).store(0);
+  (terminate_flush_thread_).store(0);
+  (flush_immediately_).store(0);
 }
 
 

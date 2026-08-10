@@ -25,7 +25,7 @@ using namespace std;  // NOLINT
 FuseInvalidator::Handle::Handle(unsigned timeout_s)
     : timeout_s_((timeout_s == 0) ? 0 : (timeout_s + kTimeoutSafetyMarginSec)) {
   status_ = reinterpret_cast<atomic_int32 *>(smalloc(sizeof(atomic_int32)));
-  atomic_init32(status_);
+  status_.store(0);
 }
 
 
@@ -72,7 +72,7 @@ FuseInvalidator::FuseInvalidator(MountPoint *mount_point,
     , spawned_(false) {
   g_fuse_notify_invalidation_ = fuse_notify_invalidation;
   memset(&thread_invalidator_, 0, sizeof(thread_invalidator_));
-  atomic_init32(&terminated_);
+  (terminated_).store(0);
 }
 
 FuseInvalidator::FuseInvalidator(glue::InodeTracker *inode_tracker,
@@ -86,7 +86,7 @@ FuseInvalidator::FuseInvalidator(glue::InodeTracker *inode_tracker,
     , spawned_(false) {
   g_fuse_notify_invalidation_ = fuse_notify_invalidation;
   memset(&thread_invalidator_, 0, sizeof(thread_invalidator_));
-  atomic_init32(&terminated_);
+  (terminated_).store(0);
 }
 
 

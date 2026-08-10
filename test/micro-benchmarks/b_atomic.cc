@@ -5,7 +5,7 @@
 // In-house atomics
 static void BM_InHouse_AtomicInc32(benchmark::State& state) {
     atomic_int32 a;
-    atomic_init32(&a);
+    (a).store(0);
     for (auto _ : state) {
         atomic_inc32(&a);
     }
@@ -14,7 +14,7 @@ BENCHMARK(BM_InHouse_AtomicInc32);
 
 static void BM_InHouse_AtomicXadd32(benchmark::State& state) {
     atomic_int32 a;
-    atomic_init32(&a);
+    (a).store(0);
     for (auto _ : state) {
         atomic_xadd32(&a, 1);
     }
@@ -41,7 +41,7 @@ BENCHMARK(BM_Std_AtomicFetchAdd32);
 // 64-bit versions
 static void BM_InHouse_AtomicInc64(benchmark::State& state) {
     atomic_int64 a;
-    atomic_init64(&a);
+    (a).store(0);
     for (auto _ : state) {
         atomic_inc64(&a);
     }
@@ -59,7 +59,7 @@ BENCHMARK(BM_Std_AtomicInc64);
 // CAS operations
 static void BM_InHouse_AtomicCas32(benchmark::State& state) {
     atomic_int32 a;
-    atomic_init32(&a);
+    (a).store(0);
     for (auto _ : state) {
         atomic_cas32(&a, 0, 1);
     }

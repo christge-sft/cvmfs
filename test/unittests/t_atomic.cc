@@ -10,8 +10,8 @@
 class T_Atomic : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    atomic_init32(&atomic32_);
-    atomic_init64(&atomic64_);
+    (atomic32_).store(0);
+    (atomic64_).store(0);
 
     ASSERT_EQ(0, atomic32_);
     ASSERT_EQ(0, atomic64_);
