@@ -7,7 +7,7 @@ static void BM_InHouse_AtomicInc32(benchmark::State& state) {
     atomic_int32 a;
     (a).store(0);
     for (auto _ : state) {
-        atomic_inc32(&a);
+        (a).fetch_add(1);
     }
 }
 BENCHMARK(BM_InHouse_AtomicInc32);
@@ -43,7 +43,7 @@ static void BM_InHouse_AtomicInc64(benchmark::State& state) {
     atomic_int64 a;
     (a).store(0);
     for (auto _ : state) {
-        atomic_inc64(&a);
+        (a).fetch_add(1);
     }
 }
 BENCHMARK(BM_InHouse_AtomicInc64);

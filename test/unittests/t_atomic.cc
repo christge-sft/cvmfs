@@ -25,7 +25,7 @@ class T_Atomic : public ::testing::Test {
       if (i % 5 == 0) {
         atomic_dec32(atomic32);
       } else {
-        atomic_inc32(atomic32);
+        atomic32.fetch_add(1);
       }
     }
 
@@ -40,7 +40,7 @@ class T_Atomic : public ::testing::Test {
       if (i % 5 == 0) {
         atomic_dec64(atomic32);
       } else {
-        atomic_inc64(atomic32);
+        atomic32.fetch_add(1);
       }
     }
 
@@ -92,8 +92,8 @@ TEST_F(T_Atomic, IncrementAtomicInts) {
   int64_t i64;
 
   for (int i = 1; i < cycles; ++i) {
-    atomic_inc32(&atomic32_);
-    atomic_inc64(&atomic64_);
+    (atomic32_).fetch_add(1);
+    (atomic64_).fetch_add(1);
 
     i32 = (atomic32_).load();
     i64 = (atomic64_).load();
