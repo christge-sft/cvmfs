@@ -7,6 +7,7 @@
 
 #include <pthread.h>
 
+#include <atomic>
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
@@ -14,7 +15,6 @@
 #include <cstring>
 #include <string>
 
-#include <atomic>
 #include "util/concurrency.h"
 #include "util/posix.h"
 #include "util/string.h"
@@ -110,7 +110,8 @@ void Tracer::Flush() {
     timespec timeout;
     int retval;
 
-    atomic_cas32(&flush_immediately_, 0, 1);
+    int32_t expected_val = 0;
+    flush_immediately_.compare_exchange_strong(expected_val, 1);
     {
       const MutexLockGuard m(&sig_flush_mutex_);
       retval = pthread_cond_signal(&sig_flush_);
@@ -150,11 +151,10 @@ void *Tracer::MainFlush(void *data) {
   struct timespec timeout;
 
   do {
-    while (
-        ((tracer->terminate_flush_thread_).load() == 0)
-        && ((tracer->flush_immediately_).load() == 0)
-        && ((tracer->seq_no_).load() - (tracer->flushed_).load()
-            <= tracer->flush_threshold_)) {
+    while (((tracer->terminate_flush_thread_).load() == 0)
+           && ((tracer->flush_immediately_).load() == 0)
+           && ((tracer->seq_no_).load() - (tracer->flushed_).load()
+               <= tracer->flush_threshold_)) {
       tracer->GetTimespecRel(2000, &timeout);
       retval = pthread_cond_timedwait(&tracer->sig_flush_,
                                       &tracer->sig_flush_mutex_, &timeout);
@@ -188,16 +188,16 @@ void *Tracer::MainFlush(void *data) {
     retval = fflush(f);
     assert(retval == 0);
     tracer->flushed_.fetch_add(i);
-    atomic_cas32(&tracer->flush_immediately_, 1, 0);
+    int32_t expected_val = 1;
+    tracer->flush_immediately_.compare_exchange_strong(expected_val, 0);
 
     {
       const MutexLockGuard l(&tracer->sig_continue_trace_mutex_);
       retval = pthread_cond_broadcast(&tracer->sig_continue_trace_);
       assert(retval == 0);
     }
-  } while (
-      ((tracer->terminate_flush_thread_).load() == 0)
-      || ((tracer->flushed_).load() < (tracer->seq_no_).load()));
+  } while (((tracer->terminate_flush_thread_).load() == 0)
+           || ((tracer->flushed_).load() < (tracer->seq_no_).load()));
 
   retval = fclose(f);
   assert(retval == 0);

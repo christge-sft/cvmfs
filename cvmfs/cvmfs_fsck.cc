@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -24,7 +25,6 @@
 
 #include "compression/compression.h"
 #include "crypto/hash.h"
-#include <atomic>
 #include "util/logging.h"
 #include "util/platform.h"
 #include "util/posix.h"
@@ -217,8 +217,10 @@ static void *MainCheck(void *data __attribute__((unused))) {
               (g_num_err_fixed).fetch_add(1);
 
               // Changes made, we have to rebuild the managed cache db
-              atomic_cas32(&g_force_rebuild, 0, 1);
-              atomic_cas32(&g_modified_cache, 0, 1);
+              int32_t expected_val = 0;
+              g_force_rebuild.compare_exchange_strong(expected_val, 1);
+              int32_t expected_val = 0;
+              g_modified_cache.compare_exchange_strong(expected_val, 1);
             } else {
               (g_num_err_unfixed).fetch_add(1);
             }
@@ -257,7 +259,8 @@ int main(int argc, char **argv) {
         g_fix_errors = true;
         break;
       case 'f':
-        atomic_cas32(&g_force_rebuild, 0, 1);
+        int32_t expected_val = 0;
+        g_force_rebuild.compare_exchange_strong(expected_val, 1);
         break;
       case 'j':
         g_num_threads = atoi(optarg);
@@ -335,8 +338,7 @@ int main(int argc, char **argv) {
   free(workers);
   if (!g_verbose)
     LogCvmfs(kLogCvmfs, kLogStdout | kLogNoLinebreak, "\n");
-  LogCvmfs(kLogCvmfs, kLogStdout, "Verified %d files",
-           (g_num_files).load());
+  LogCvmfs(kLogCvmfs, kLogStdout, "Verified %d files", (g_num_files).load());
 
   if ((g_num_tmp_catalog).load() > 0)
     LogCvmfs(kLogCvmfs, kLogStdout, "Temporary file catalogs were found.");

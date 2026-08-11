@@ -7,13 +7,13 @@
 
 #include <pthread.h>
 
+#include <atomic>
 #include <ctime>
 
 #include "crypto/hash.h"
 #include "duplex_fuse.h"
 #include "fence.h"
 #include "fuse_evict.h"
-#include <atomic>
 #include "util/single_copy.h"
 
 namespace cvmfs {
@@ -58,8 +58,7 @@ class FuseRemounter : SingleCopy {
   void TryFinish(const shash::Any &root_hash = shash::Any());
   void EnterMaintenanceMode();
   bool IsCaching() {
-    return ((maintenance_mode_).load() == 0)
-           && ((drainout_mode_).load() == 0);
+    return ((maintenance_mode_).load() == 0) && ((drainout_mode_).load() == 0);
   }
   bool IsInDrainoutMode() { return (drainout_mode_).load() == 2; }
   bool IsInMaintenanceMode() { return (maintenance_mode_).load() == 1; }
@@ -77,7 +76,10 @@ class FuseRemounter : SingleCopy {
   bool HasRemountTrigger() { return pipe_remount_trigger_[0] >= 0; }
   void SetAlarm(int timeout);
 
-  bool EnterCriticalSection() { return atomic_cas32(&critical_section_, 0, 1); }
+  bool EnterCriticalSection() {
+    return int32_t expected_val = 0;
+    critical_section_.compare_exchange_strong(expected_val, 1);
+  }
   void LeaveCriticalSection() { (critical_section_).fetch_sub(1); /* 1 -> 0 */ }
 
   void SetOfflineMode(bool value);
