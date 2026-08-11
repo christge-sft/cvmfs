@@ -126,7 +126,7 @@ class Host {
    * distinguish two Host objects with the same host name.  E.g. when the proxy
    * list in Download.cc reads "http://A:3128|http://A:3128".
    */
-  static atomic_int64 global_id_;
+  static std::atomic<int64_t> global_id_;
 
   /**
    * When the name resolution becomes outdated, in UTC seconds since UNIX epoch.

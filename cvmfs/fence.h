@@ -60,12 +60,12 @@ class Fence : public SingleCopy {
   /**
    * Number of active critical regions.
    */
-  atomic_int64 counter_;
+  std::atomic<int64_t> counter_;
 
   /**
    * A boolean that indicates if the fence is blocked.
    */
-  atomic_int32 blocking_;
+  std::atomic<int32_t> blocking_;
 };
 
 

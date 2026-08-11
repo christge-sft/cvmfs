@@ -32,7 +32,7 @@ void Tracer::Activate(const int buffer_size,
          && flush_threshold_ < buffer_size_);
 
   ring_buffer_ = new BufferEntry[buffer_size_];
-  commit_buffer_ = new atomic_int32[buffer_size_];
+  commit_buffer_ = new std::atomic<int32_t>[buffer_size_];
   for (int i = 0; i < buffer_size_; i++)
     commit_buffer_[i].store(0);
 

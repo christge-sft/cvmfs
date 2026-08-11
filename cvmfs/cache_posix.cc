@@ -86,11 +86,11 @@ class CallGuard {
 
  private:
   bool drainout_;
-  static atomic_int32 global_drainout_;
-  static atomic_int32 num_inflight_calls_;
+  static std::atomic<int32_t> global_drainout_;
+  static std::atomic<int32_t> num_inflight_calls_;
 };
-atomic_int32 CallGuard::num_inflight_calls_ = 0;
-atomic_int32 CallGuard::global_drainout_ = 0;
+std::atomic<int32_t> CallGuard::num_inflight_calls_ = 0;
+std::atomic<int32_t> CallGuard::global_drainout_ = 0;
 
 }  // anonymous namespace
 

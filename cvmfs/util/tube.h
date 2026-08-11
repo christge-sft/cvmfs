@@ -286,7 +286,7 @@ class TubeGroup : SingleCopy {
  private:
   bool is_active_;
   std::vector<Tube<ItemT> *> tubes_;
-  atomic_int32 round_robin_;
+  std::atomic<int32_t> round_robin_;
 };
 
 #endif  // CVMFS_UTIL_TUBE_H_

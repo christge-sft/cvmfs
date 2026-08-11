@@ -306,7 +306,7 @@ class MockCatalog : public MockObjectStorage<MockCatalog> {
  public:
   static const std::string rhs;
   static const shash::Any root_hash;
-  static atomic_int32 instances;
+  static std::atomic<int32_t> instances;
 
  public:
   struct NestedCatalog {

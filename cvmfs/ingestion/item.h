@@ -105,12 +105,12 @@ class FileItem : SingleCopy {
   /**
    * Number of chunks created but not yet uploaded and registered
    */
-  atomic_int64 nchunks_in_fly_;
+  std::atomic<int64_t> nchunks_in_fly_;
   /**
    * Switches to true once all of the file has been through the chunking
    * stage
    */
-  atomic_int32 is_fully_chunked_;
+  std::atomic<int32_t> is_fully_chunked_;
   pthread_mutex_t lock_;
 };
 
@@ -226,7 +226,7 @@ class BlockItem : SingleCopy {
   /**
    * Total capacity of all BlockItem()
    */
-  static atomic_int64 managed_bytes_;
+  static std::atomic<int64_t> managed_bytes_;
 
   // Forget pointer to the data
   void Discharge();

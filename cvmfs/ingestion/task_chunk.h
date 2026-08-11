@@ -80,7 +80,7 @@ class TaskChunk : public TubeConsumer<BlockItem> {
    * Every new chunk increases the tag sequence counter that is used to annotate
    * BlockItems.
    */
-  static atomic_int64 tag_seq_;
+  static std::atomic<int64_t> tag_seq_;
 
   TubeGroup<BlockItem> *tubes_out_;
   ItemAllocator *allocator_;

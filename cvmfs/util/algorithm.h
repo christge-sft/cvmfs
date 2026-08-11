@@ -183,7 +183,7 @@ class CVMFS_EXPORT Log2Histogram {
   void PrintLog2Histogram();
 
  private:
-  std::vector<atomic_int32> bins_;
+  std::vector<std::atomic<int32_t>> bins_;
   // boundary_values_ handle the largest value a certain
   // bin can store in itself.
   std::vector<unsigned int> boundary_values_;
@@ -195,7 +195,7 @@ class CVMFS_EXPORT Log2Histogram {
  */
 class CVMFS_EXPORT UTLog2Histogram {
  public:
-  std::vector<atomic_int32> GetBins(const Log2Histogram &h);
+  std::vector<std::atomic<int32_t>> GetBins(const Log2Histogram &h);
 };
 
 

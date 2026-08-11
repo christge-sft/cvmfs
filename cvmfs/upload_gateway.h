@@ -95,7 +95,7 @@ class GatewayUploader : public AbstractUploader {
 
   Config config_;
   SessionContext *session_context_;
-  mutable atomic_int32 num_errors_;
+  mutable std::atomic<int32_t> num_errors_;
 };
 
 }  // namespace upload

@@ -391,7 +391,7 @@ class CommandMigrate : public Command {
   unsigned int file_descriptor_limit_;
   CatalogStatisticsList catalog_statistics_list_;
   unsigned int catalog_count_;
-  atomic_int32 catalogs_processed_;
+  std::atomic<int32_t> catalogs_processed_;
   bool has_committed_new_revision_;
 
   uid_t uid_;

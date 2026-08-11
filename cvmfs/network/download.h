@@ -311,7 +311,7 @@ class DownloadManager {  // NOLINT(clang-analyzer-optin.performance.Padding)
   char *user_agent_;
 
   pthread_t thread_download_;
-  atomic_int32 multi_threaded_;
+  std::atomic<int32_t> multi_threaded_;
   UniquePtr<Pipe<kPipeThreadTerminator> > pipe_terminate_;
 
   UniquePtr<Pipe<kPipeDownloadJobs> > pipe_jobs_;

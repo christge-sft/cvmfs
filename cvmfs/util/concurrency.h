@@ -688,9 +688,9 @@ class ConcurrentWorkers : public Observable<typename WorkerT::returned_data> {
   // job queue
   typedef FifoChannel<WorkerJob> JobQueue;
   JobQueue jobs_queue_;
-  mutable atomic_int32 jobs_pending_;
-  mutable atomic_int32 jobs_failed_;
-  mutable atomic_int64 jobs_processed_;
+  mutable std::atomic<int32_t> jobs_pending_;
+  mutable std::atomic<int32_t> jobs_failed_;
+  mutable std::atomic<int64_t> jobs_processed_;
 
   // callback channel
   typedef FifoChannel<CallbackJob> CallbackQueue;

@@ -42,7 +42,7 @@ class Counter {
   std::string ToString();
 
  private:
-  atomic_int64 counter_;
+  std::atomic<int64_t> counter_;
 };
 
 // perf::Func(Counter) is more clear to read in the code
@@ -83,7 +83,7 @@ class Statistics {
       (refcnt).store(0);
       (refcnt).fetch_add(1);
     }
-    atomic_int32 refcnt;
+    std::atomic<int32_t> refcnt;
     Counter counter;
     std::string desc;
   };

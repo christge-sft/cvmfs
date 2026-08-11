@@ -169,8 +169,8 @@ class BuggyCacheManager : public CacheManager {
   bool open_2nd_try;
   bool allow_open;
   bool stall_in_ctrltxn;
-  atomic_int32 waiting_in_ctrltxn;
-  atomic_int32 continue_ctrltxn;
+  std::atomic<int32_t> waiting_in_ctrltxn;
+  std::atomic<int32_t> continue_ctrltxn;
   bool allow_open_from_txn;
 };
 

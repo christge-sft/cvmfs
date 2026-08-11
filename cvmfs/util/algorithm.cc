@@ -101,7 +101,7 @@ Log2Histogram::Log2Histogram(unsigned int nbins) {
   }
 }
 
-std::vector<atomic_int32> UTLog2Histogram::GetBins(const Log2Histogram &h) {
+std::vector<std::atomic<int32_t>> UTLog2Histogram::GetBins(const Log2Histogram &h) {
   return h.bins_;
 }
 

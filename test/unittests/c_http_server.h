@@ -151,8 +151,8 @@ class MockHTTPServer {
   // Handles the entire communication in one event loop.
   static void *Main(void *data);
 
-  atomic_int32 running_;
-  atomic_int32 server_thread_ready_;
+  std::atomic<int32_t> running_;
+  std::atomic<int32_t> server_thread_ready_;
   int server_port_;
 
   void *callback_data_;

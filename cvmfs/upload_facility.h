@@ -463,7 +463,7 @@ class TaskUpload : public TubeConsumer<AbstractUploader::UploadJob> {
  */
 struct UploadStreamHandle {
   typedef AbstractUploader::CallbackTN CallbackTN;
-  static atomic_int64 g_upload_stream_tag;
+  static std::atomic<int64_t> g_upload_stream_tag;
 
   explicit UploadStreamHandle(const CallbackTN *commit_callback)
       : commit_callback(commit_callback)
