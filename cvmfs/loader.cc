@@ -36,7 +36,9 @@
 #include <string>
 #include <vector>
 
+#ifndef __APPLE__
 #include "Dcoredumper.h"
+#endif
 #include "fence.h"
 #include "fuse_main.h"
 #include "loader_talk.h"
@@ -730,10 +732,15 @@ int FuseMain(int argc, char *argv[]) {
     }
 
     if (string(argv[1]) == string("__COREDUMP__")) {
+#ifdef __APPLE__
+      LogCvmfs(kLogCvmfs, kLogStderr, "__COREDUMP__ is not supported on macOS");
+      return 1;
+#else
       if (argc < 3)
         return 1;
       // cvmfs2 __COREDUMP__ [--standard|--full] <pid> [output.core]
       return dcoredumper_main(argc - 1, argv + 1);
+#endif
     }
 
     debug_mode_ = getenv("__CVMFS_DEBUG_MODE__") != NULL;

@@ -204,7 +204,6 @@ if (BUILD_CVMFS)
   # the client library.
   #
   set (CVMFS_STUB_SOURCES
-       Dcoredumper.cc
        globals.cc
        loader.cc
        loader_talk.cc
@@ -217,6 +216,9 @@ if (BUILD_CVMFS)
        util/posix.cc
        util/string.cc
   )
+  if (NOT MACOSX)
+    list (APPEND CVMFS_STUB_SOURCES Dcoredumper.cc)
+  endif ()
   set (CVMFS_STUB_CFLAGS "-DCVMFS_FUSE_MODULE -DCVMFS_NAMESPACE_GUARD=loader -D_FILE_OFFSET_BITS=64 -fexceptions")
   set (CVMFS_STUB_LDFLAGS "-ldl -lm")
   set (CVMFS_STUB_LINK_LIBRARIES pthread dl ${CAP_LIBRARIES})

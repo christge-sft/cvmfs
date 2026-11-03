@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
+#include <ctime>
 #include <cerrno>
 #include <string>
 #include <vector>
