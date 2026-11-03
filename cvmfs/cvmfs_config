@@ -310,6 +310,8 @@ cvmfs_config_usage() {
   echo ""
   echo "  bugreport [timeout_in_sec_per_command (default = 90)]"
   echo ""
+  echo "  dcoredump [--standard|--full] <pid> [output.core]"
+  echo ""
   echo "  docker-run [--run] [--image I] [--proxy URL] [<repository>...]"
 }
 
@@ -3129,6 +3131,15 @@ case "$1" in
      shift 1
      cvmfs_bugreport $@
      RETVAL=$?
+     ;;
+
+  dcoredump)
+     if [ `id -u` -ne 0 ]; then
+       echo "root privileges required"
+       exit 1
+     fi
+     shift 1
+     cvmfs_dcoredump $@
      ;;
 
   docker-run)
